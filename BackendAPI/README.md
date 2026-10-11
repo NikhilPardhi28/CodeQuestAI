@@ -28,10 +28,14 @@ Use typed settings sourced from environment variables. `CODEQUEST_` is the reser
 - Database schema changes use reviewed Alembic revisions under `Database/migrations/versions/`.
 - Use additive expand/contract migration steps for deployed compatibility; never mutate published challenge versions in place.
 - Services own repository interfaces; route handlers translate transport data and do not embed domain or SQL rules.
-- Health, catalog, profile, and legacy snapshots are implemented under `/api/v1`. V2 quest events validate registered server-authored rules and trusted passed submissions; XP and objective counts are never accepted from the client. Challenge submission/evaluation, arbitrary code execution, teacher/admin, and provider integration endpoints do not exist.
+- Health, catalog, profile, challenge definitions/hints/submissions, and legacy snapshots are under `/api/v1`. V2 quest events validate server-authored rules and trusted passed submissions; accepted evaluations update matching objectives and rewards atomically. API source execution is prohibited; jobs go to PythonExecutionService only when configured.
 
 ## Migration and development content
 
 Apply schema with `uv run python -m alembic upgrade head`; roll back one migration with `uv run python -m alembic downgrade -1`. Seed missing development catalog rows with `uv run python -m BackendAPI.app.db.seed`. See [Database setup](../Database/README.md).
 
 Run backend tests with `uv run python -m pytest`. PostgreSQL migration and concurrency tests require the isolated, empty `CODEQUEST_TEST_DATABASE_URL` described in `Database/README.md`; SQLite alone does not verify PostgreSQL locking.
+
+### Challenge worker
+
+Submission endpoints stay unavailable unless `CODEQUEST_EVALUATION_WORKER_URL` and `CODEQUEST_EVALUATION_WORKER_TOKEN` are both configured. Run `python PythonExecutionService/worker.py` only after building a reviewed evaluator image and setting `CODEQUEST_EVALUATOR_IMAGE` to its immutable `@sha256:` reference. The worker service needs no database credentials and is distinct from each disposable job container. The Docker Linux engine is unavailable in this environment, so worker runtime and isolation are not verified. There is no host Python fallback.

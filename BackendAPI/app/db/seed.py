@@ -10,6 +10,8 @@ from sqlalchemy.orm import Session
 
 from BackendAPI.app.db.models import (
     AchievementDefinition,
+    ChallengeHiddenTestCase,
+    ChallengeHint,
     CodingChallengeDefinition,
     CurriculumRegion,
     LearningObjective,
@@ -196,12 +198,94 @@ def seed_development(session: Session) -> dict[str, int]:
         ),
     ]
     for slug, objective_slug, title, statement in challenge_rows:
+        hidden = {
+            "signal-coordinate": [
+                {"input": [17, 42], "expected": [17, 42]},
+                {"input": [-8, 5], "expected": [-8, 5]},
+            ],
+            "foundry-output": [
+                {"input": [7, 12], "expected": 19},
+                {"input": [-4, 9], "expected": 5},
+            ],
+            "trail-decision": [
+                {"input": [True], "expected": "tunnel"},
+                {"input": [False], "expected": "ridge"},
+            ],
+        }[slug]
+        hints = {
+            "signal-coordinate": [
+                "A function can return more than one value by returning a tuple.",
+                "Return (x, y) in the same order as the parameters.",
+            ],
+            "foundry-output": [
+                "Use the + operator to combine two numeric values.",
+                "Return first + second; do not print it.",
+            ],
+            "trail-decision": [
+                "Use an if/else branch to choose one of two strings.",
+                "Return 'tunnel' for True and 'ridge' otherwise.",
+            ],
+        }[slug]
+        visible_tests = {
+            "signal-coordinate": [
+                {"input": [2, 3], "expected": [2, 3]},
+                {"input": [0, -1], "expected": [0, -1]},
+            ],
+            "foundry-output": [
+                {"input": [2, 3], "expected": 5},
+                {"input": [0, -1], "expected": -1},
+            ],
+            "trail-decision": [
+                {"input": [False], "expected": "ridge"},
+                {"input": [True], "expected": "tunnel"},
+            ],
+        }[slug]
         public_content = {
-            "examples": [],
-            "visibleHints": ["Name the values before combining them."],
+            "mode": "function",
+            "functionName": {
+                "signal-coordinate": "signal_coordinate",
+                "foundry-output": "combined_energy",
+                "trail-decision": "choose_trail",
+            }[slug],
+            "functionSignature": {
+                "signal-coordinate": "signal_coordinate(x, y)",
+                "foundry-output": "combined_energy(first, second)",
+                "trail-decision": "choose_trail(is_raining)",
+            }[slug],
+            "starterCode": {
+                "signal-coordinate": (
+                    "def signal_coordinate(x, y):\n"
+                    "    # Return both coordinates as a tuple.\n"
+                    "    pass\n"
+                ),
+                "foundry-output": (
+                    "def combined_energy(first, second):\n"
+                    "    # Return the combined energy.\n"
+                    "    pass\n"
+                ),
+                "trail-decision": (
+                    "def choose_trail(is_raining):\n"
+                    "    # Return 'ridge' when dry, otherwise 'tunnel'.\n"
+                    "    pass\n"
+                ),
+            }[slug],
+            "examples": {
+                "signal-coordinate": ["signal_coordinate(2, 3) returns (2, 3)"],
+                "foundry-output": ["combined_energy(2, 3) returns 5"],
+                "trail-decision": ["choose_trail(False) returns 'ridge'"],
+            }[slug],
+            "visibleTests": visible_tests,
+            "expectedOutputFormat": "Return the value described by the function signature.",
         }
         digest_input = json.dumps(
-            {"slug": slug, "version": 1, "statement": statement, "public": public_content},
+            {
+                "slug": slug,
+                "version": 1,
+                "statement": statement,
+                "public": public_content,
+                "hidden": hidden,
+                "hints": hints,
+            },
             sort_keys=True,
             separators=(",", ":"),
         ).encode()
@@ -214,11 +298,90 @@ def seed_development(session: Session) -> dict[str, int]:
             "statement": statement,
             "public_content": public_content,
             "content_digest": hashlib.sha256(digest_input).hexdigest(),
+            "max_source_bytes": 8192,
             "is_published": True,
         }
         counts["challenges"] += _insert_if_missing(
             session, CodingChallengeDefinition, (slug, 1), **values
         )
+        for position, test_definition in enumerate(hidden):
+            if (
+                session.query(ChallengeHiddenTestCase)
+                .filter_by(challenge_slug=slug, challenge_version=1, position=position)
+                .first()
+                is None
+            ):
+                session.add(
+                    ChallengeHiddenTestCase(
+                        challenge_slug=slug,
+                        challenge_version=1,
+                        position=position,
+                        test_definition=test_definition,
+                    )
+                )
+        for level, content in enumerate(hints, start=1):
+            if (
+                session.query(ChallengeHint)
+                .filter_by(challenge_slug=slug, challenge_version=1, level=level)
+                .first()
+                is None
+            ):
+                session.add(
+                    ChallengeHint(
+                        challenge_slug=slug,
+                        challenge_version=1,
+                        level=level,
+                        content=content,
+                    )
+                )
+        versioned_digest = hashlib.sha256(
+            json.dumps(
+                {
+                    "slug": slug,
+                    "version": 2,
+                    "statement": statement,
+                    "public": public_content,
+                    "hidden": hidden,
+                    "hints": hints,
+                },
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode()
+        ).hexdigest()
+        version2 = {**values, "version": 2, "content_digest": versioned_digest}
+        counts["challenges"] += _insert_if_missing(
+            session, CodingChallengeDefinition, (slug, 2), **version2
+        )
+        for position, test_definition in enumerate(hidden):
+            if (
+                session.query(ChallengeHiddenTestCase)
+                .filter_by(challenge_slug=slug, challenge_version=2, position=position)
+                .first()
+                is None
+            ):
+                session.add(
+                    ChallengeHiddenTestCase(
+                        challenge_slug=slug,
+                        challenge_version=2,
+                        position=position,
+                        test_definition=test_definition,
+                    )
+                )
+        for level, content in enumerate(hints, start=1):
+            if (
+                session.query(ChallengeHint)
+                .filter_by(challenge_slug=slug, challenge_version=2, level=level)
+                .first()
+                is None
+            ):
+                session.add(
+                    ChallengeHint(
+                        challenge_slug=slug,
+                        challenge_version=2,
+                        level=level,
+                        content=content,
+                    )
+                )
 
     targets = [
         ("interact", "relay-switch", 1),
@@ -293,6 +456,85 @@ def seed_development(session: Session) -> dict[str, int]:
         reward_type="experience",
         experience_points=25,
     )
+
+    version_one_quests = session.query(QuestDefinition).filter_by(version=1).all()
+    for quest in version_one_quests:
+        values = {
+            "slug": quest.slug,
+            "version": 2,
+            "region_slug": quest.region_slug,
+            "region_version": quest.region_version,
+            "objective_slug": quest.objective_slug,
+            "objective_version": quest.objective_version,
+            "title": quest.title,
+            "summary": quest.summary,
+            "public_content": quest.public_content,
+            "is_published": quest.is_published,
+        }
+        counts["quests"] += _insert_if_missing(session, QuestDefinition, (quest.slug, 2), **values)
+    for quest in version_one_quests:
+        old_rules = (
+            session.query(QuestObjectiveRule)
+            .filter_by(quest_slug=quest.slug, quest_version=1)
+            .all()
+        )
+        for old_rule in old_rules:
+            target_version = (
+                2
+                if old_rule.event_type in {"challenge_passed", "prerequisite_completed"}
+                else old_rule.target_version
+            )
+            target_key = (old_rule.event_type, old_rule.target_id, target_version)
+            counts["questRules"] += _insert_if_missing(
+                session,
+                QuestEventTarget,
+                target_key,
+                event_type=old_rule.event_type,
+                target_id=old_rule.target_id,
+                target_version=target_version,
+                is_enabled=True,
+            )
+            counts["questRules"] += _insert_if_missing(
+                session,
+                QuestObjectiveRule,
+                (quest.slug, 2, old_rule.objective_id),
+                quest_slug=quest.slug,
+                quest_version=2,
+                objective_id=old_rule.objective_id,
+                event_type=old_rule.event_type,
+                target_id=old_rule.target_id,
+                target_version=target_version,
+                required_count=old_rule.required_count,
+            )
+        old_edges = (
+            session.query(QuestObjectivePrerequisite)
+            .filter_by(quest_slug=quest.slug, quest_version=1)
+            .all()
+        )
+        for edge in old_edges:
+            counts["questRules"] += _insert_if_missing(
+                session,
+                QuestObjectivePrerequisite,
+                (quest.slug, 2, edge.objective_id, edge.prerequisite_objective_id),
+                quest_slug=quest.slug,
+                quest_version=2,
+                objective_id=edge.objective_id,
+                prerequisite_objective_id=edge.prerequisite_objective_id,
+            )
+        old_rewards = (
+            session.query(QuestRewardRule).filter_by(quest_slug=quest.slug, quest_version=1).all()
+        )
+        for reward in old_rewards:
+            counts["questRules"] += _insert_if_missing(
+                session,
+                QuestRewardRule,
+                (quest.slug, 2, reward.reward_id),
+                quest_slug=quest.slug,
+                quest_version=2,
+                reward_id=reward.reward_id,
+                reward_type=reward.reward_type,
+                experience_points=reward.experience_points,
+            )
 
     achievements = [
         (

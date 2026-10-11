@@ -24,12 +24,16 @@
 | GET | `/api/v1/quests/{slug}` | public | Latest published version by stable slug |
 | GET | `/api/v1/challenges` | public | Published public challenge definitions, optional `objective_slug` filter |
 | GET | `/api/v1/challenges/{slug}` | public | Latest published public version; never includes hidden tests |
+| GET | `/api/v1/challenges/{slug}/versions/{version}` | public | Exact published immutable version and public editor content |
+| GET | `/api/v1/challenges/{slug}/hints?version=1&level=1` | OIDC bearer | Next sequential progressive hint for the caller |
+| POST | `/api/v1/challenges/{slug}/submissions` | OIDC bearer | Idempotently queue source for the isolated evaluation worker |
 | GET | `/api/v1/me` | OIDC bearer | Caller-owned profile; 404 until initialized |
 | PUT | `/api/v1/me` | OIDC bearer | Idempotent profile creation/update using only token issuer/subject identity |
 | GET | `/api/v1/me/quests` | OIDC bearer | Caller-owned quest progress page |
 | GET | `/api/v1/me/progression` | OIDC bearer | Caller-owned progression snapshot |
 | GET | `/api/v1/me/achievements` | OIDC bearer | Caller-owned achievement awards page |
 | GET | `/api/v1/me/submissions` | OIDC bearer | Caller-owned submission metadata page |
+| GET | `/api/v1/me/submissions/{submission_id}` | OIDC bearer | Caller-owned lifecycle state and permitted results |
 | POST | `/api/v2/me/quests/{quest_slug}/events` | OIDC bearer | Submit a registered, revision-checked quest event |
 | GET | `/api/v2/me/quests` | OIDC bearer | Caller-owned quest progress with objective counts and revisions |
 | GET | `/api/v2/me/progression` | OIDC bearer | Authoritative progression snapshot |
@@ -75,11 +79,23 @@ Do not place tokens in command history or logs. No fake/development auth bypass 
 ## Known limitations
 
 - Identity provider and deployment are not selected. Bearer validation currently accepts RS256 OIDC JWTs only and checks signature, issuer, audience, expiration, issued-at, and subject. Role/scope policy and account lifecycle remain future work.
-- Quest progress writes and authoritative quest/progression reads are implemented only in v2. Awards and submission metadata remain read-only. No challenge submission create/run endpoint exists yet.
+- Quest progress writes and authoritative quest/progression reads are implemented only in v2. Challenge submissions use the additive v1 routes below; source is never included in learner response bodies.
 - V1 quest progress remains read-only. Versioned quest event writes and authoritative quest/progression reads are implemented in additive v2 routes described below. V2 XP rewards require a trusted passed challenge record; client interaction/checkpoint claims cannot independently award XP.
-- Challenge execution, scoring, progression awards, authoring/publishing, teacher/admin routes, refresh-token handling, rate limiting, CORS, and production observability are not implemented.
-- `source_digest` is metadata only; submitted source code is neither received nor persisted in this milestone.
+- Challenge authoring/publishing, teacher/admin routes, refresh-token handling, CORS, and production observability are not implemented.
+- External challenge execution is delegated to the separately configured PythonExecutionService. It requires an immutable evaluator image digest and fails closed if the worker/runtime is missing. Docker's Linux engine is unavailable on this host, so isolated evaluation is not operationally verified.
+- Submission source is persisted for worker delivery; source-retention/deletion periods remain open. Learner response schemas do not expose source, worker traces, hidden tests, environment details, or arbitrary exceptions.
+- Admission is capped at five submissions per minute and thirty per day per player, with a configurable global queue cap and two worker execution slots. PostgreSQL advisory locking serializes queue admission; SQLite does not establish that concurrency guarantee.
 - Readiness checks PostgreSQL only. Missing OIDC configuration disables protected routes but does not make public catalog service unready.
+
+## Challenge submission and evaluation (v1)
+
+Challenge definitions are immutable by `(slug, version)`. Public definitions include instructions, objective references, examples, starter code, function signature, expected output format, and resource limits. Hidden tests and progressive hints are stored separately; public responses contain no hidden-test or passing-threshold fields. Hints require authentication and unlock one level at a time.
+
+Submission creation requires `clientSubmissionId`, exact `challengeVersion`, and source. Requests over 32 KiB are rejected at schema validation; each challenge may enforce a smaller UTF-8 byte limit. The client key is unique per authenticated profile. Same-key/same-content requests return the existing submission; changed content returns 409. Admission limits are 5/minute, 30/day per player, and a configurable queue cap. Source is sent only to the configured internal worker URL with a bearer secret; FastAPI never runs student code.
+
+Lifecycle states are `queued`, `running`, `passed`, `failed`, `timed_out`, and `internal_error`. `GET /api/v1/me/submissions/{id}` is ownership-scoped. Only visible-test outcomes and sanitized diagnostics are returned; hidden outcomes are aggregate counts. Backend logic computes score and pass status from validated counts and the server threshold. Malformed/mismatched worker responses, timeouts, and infrastructure errors cannot pass a submission or grant rewards. A passed evaluation advances matching v2 quest objectives and rewards in the same transaction. Repeated terminal worker delivery returns the stored result without duplicate quest events.
+
+The worker URL and token must be configured together. Without both, submission creation fails closed with 503. The separate worker accepts bounded jobs, limits concurrent execution to two, requires a digest-pinned image, and launches a fresh container with no network, no host mounts, read-only root, non-root UID, dropped capabilities, no-new-privileges, CPU/memory/process/disk limits, bounded output, and an external timeout/kill path. Docker, Linux execution, seccomp behavior, and adversarial isolation remain unverified on this host. These controls are not a sandbox security certification; see [ADR-0011](../adr/0011-python-execution-isolation.md).
 
 ## Quest Events v2 contract (Milestone 6)
 

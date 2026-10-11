@@ -175,7 +175,8 @@ namespace CodeQuest.Gameplay.Quests
             }
 
             var eventType = ToServerEventType(kind);
-            if (eventType == null || !definition.objectives.Any(item => item.kind == kind && item.targetId == targetId))
+            var objective = definition.objectives.FirstOrDefault(item => item.kind == kind && item.targetId == targetId);
+            if (eventType == null || objective == null)
                 return false;
             var id = Guid.TryParse(eventId, out var parsed) ? parsed.ToString("D") : Guid.NewGuid().ToString("D");
             if (!progress.processedEventIds.Add(id)) return false;
@@ -187,7 +188,7 @@ namespace CodeQuest.Gameplay.Quests
                 questVersion = definition.version,
                 eventType = eventType,
                 targetId = targetId,
-                targetVersion = 1
+                targetVersion = objective.targetVersion
             });
             _pending.Add(pending);
             progress.syncState = QuestSyncState.Pending;

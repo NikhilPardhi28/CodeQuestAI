@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace CodeQuest.Gameplay.Challenges
 {
-    public enum SubmissionStatus { Received, Queued, Running, Passed, Failed, Error }
+    public enum SubmissionStatus { Queued, Running, Passed, Failed, TimedOut, InternalError }
 
     [Serializable]
     public sealed class ChallengeReference
@@ -19,7 +19,7 @@ namespace CodeQuest.Gameplay.Challenges
     public sealed class SubmissionRequest
     {
         public string clientSubmissionId;
-        public ChallengeReference challenge;
+        public int challengeVersion;
         public string source;
     }
 
@@ -27,9 +27,13 @@ namespace CodeQuest.Gameplay.Challenges
     public sealed class EvaluationResult
     {
         public SubmissionStatus status;
-        public string summary;
-        public string[] hints;
-        public string learningObjective;
+        public int scorePercent;
+        public int passedTests;
+        public int totalTests;
+        public bool hasResult;
+        public string[] diagnostics;
+        public string createdAt;
+        public string completedAt;
     }
 
     /// <summary>Future boundary only; implementations must call an isolated execution service, never run source in Unity or BackendAPI.</summary>

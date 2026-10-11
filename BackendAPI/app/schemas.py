@@ -68,6 +68,77 @@ class ChallengeOut(OrmSchema):
     title: str
     statement: str
     publicContent: dict[str, Any] = Field(validation_alias="public_content")
+    timeLimitMs: int = Field(validation_alias="time_limit_ms")
+    outputLimitBytes: int = Field(validation_alias="output_limit_bytes")
+    maxSourceBytes: int = Field(validation_alias="max_source_bytes")
+
+
+class ChallengeSubmissionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    clientSubmissionId: UUID
+    challengeVersion: int = Field(ge=1)
+    source: str = Field(min_length=1, max_length=32768)
+
+    @field_validator("source")
+    @classmethod
+    def validate_source_bytes(cls, value: str) -> str:
+        if len(value.encode("utf-8")) > 32768:
+            raise ValueError("source exceeds the maximum UTF-8 byte length")
+        if not value.strip():
+            raise ValueError("source cannot be blank")
+        return value
+
+
+class SubmissionResultOut(BaseModel):
+    hasResult: bool = False
+    scorePercent: int | None = Field(default=None, ge=0, le=100)
+    passedTests: int | None = Field(default=None, ge=0)
+    totalTests: int | None = Field(default=None, ge=0)
+    visibleResults: list[dict[str, str | bool]] = Field(default_factory=list)
+    diagnostics: list[dict[str, str]] = Field(default_factory=list)
+
+
+class SubmissionOut(OrmSchema):
+    id: UUID
+    challengeSlug: str = Field(validation_alias="challenge_slug")
+    challengeVersion: int = Field(validation_alias="challenge_version")
+    clientSubmissionId: UUID = Field(validation_alias="client_submission_id")
+    status: Literal["queued", "running", "passed", "failed", "timed_out", "internal_error"]
+    result: SubmissionResultOut | None = Field(default=None, validation_alias="result_summary")
+    createdAt: datetime = Field(validation_alias="created_at")
+    completedAt: datetime | None = Field(validation_alias="completed_at")
+
+
+class ChallengeHintOut(BaseModel):
+    challengeSlug: str
+    challengeVersion: int
+    level: int
+    content: str
+
+
+class EvaluationTestResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    passed: bool
+    diagnosticCode: (
+        Literal["syntax_error", "runtime_error", "wrong_answer", "timeout", "output_limit"] | None
+    ) = None
+    message: str = Field(default="", max_length=240)
+
+
+class WorkerEvaluationResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    submissionId: UUID
+    challengeSlug: str = Field(min_length=1, max_length=100)
+    challengeVersion: int = Field(ge=1)
+    evaluatorVersion: str = Field(min_length=1, max_length=40)
+    visibleResults: list[EvaluationTestResult] = Field(max_length=100)
+    hiddenPassed: int = Field(ge=0, le=100)
+    hiddenTotal: int = Field(ge=0, le=100)
+    timedOut: bool = False
+    infrastructureError: bool = False
 
 
 class PlayerProfileUpsert(BaseModel):
@@ -210,7 +281,9 @@ class SubmissionMetadataOut(OrmSchema):
     challengeSlug: str = Field(validation_alias="challenge_slug")
     challengeVersion: int = Field(validation_alias="challenge_version")
     clientSubmissionId: UUID = Field(validation_alias="client_submission_id")
-    status: Literal["received", "queued", "running", "passed", "failed", "error"]
+    status: Literal[
+        "received", "queued", "running", "passed", "failed", "timed_out", "internal_error"
+    ]
     sourceDigest: str | None = Field(validation_alias="source_digest")
     createdAt: datetime = Field(validation_alias="created_at")
     completedAt: datetime | None = Field(validation_alias="completed_at")

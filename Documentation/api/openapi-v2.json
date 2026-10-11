@@ -3,7 +3,7 @@
   "info": {
     "title": "CodeQuest AI Backend API",
     "version": "0.1.0",
-    "description": "Versioned CodeQuest AI backend contracts. Learner-owned routes require a valid OIDC bearer token; challenge execution is not provided by this API yet."
+    "description": "Versioned CodeQuest AI backend contracts. Learner-owned routes require a valid OIDC bearer token; Python evaluation is delegated to a separate worker service."
   },
   "paths": {
     "/api/v2/quests/{quest_slug}": {
@@ -87,6 +87,36 @@
           },
           "422": {
             "description": "Request validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request body exceeds a supported limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Submission rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Evaluation worker returned an invalid result",
             "content": {
               "application/json": {
                 "schema": {
@@ -197,6 +227,36 @@
           },
           "422": {
             "description": "Request validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request body exceeds a supported limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Submission rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Evaluation worker returned an invalid result",
             "content": {
               "application/json": {
                 "schema": {
@@ -326,6 +386,36 @@
               }
             }
           },
+          "413": {
+            "description": "Request body exceeds a supported limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Submission rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Evaluation worker returned an invalid result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
           "500": {
             "description": "Unexpected server error",
             "content": {
@@ -409,6 +499,36 @@
           },
           "422": {
             "description": "Request validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request body exceeds a supported limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Submission rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Evaluation worker returned an invalid result",
             "content": {
               "application/json": {
                 "schema": {

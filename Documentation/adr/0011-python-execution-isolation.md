@@ -12,11 +12,11 @@ Each submission runs in a fresh, disposable Linux container created by a dedicat
 
 Provisional starter limits (per the baseline, to be calibrated against curriculum libraries): CPU 2 seconds, wall clock 5 seconds, memory 128 MiB, one process, stdout+stderr 64 KiB, bounded source/input payload. These are initial local policy values, not a proof of adequate isolation or production capacity. Use image digests and pinned Python/runtime packages. Reject shell interpolation and kill the full process tree on timeout.
 
-Local execution uses Docker Desktop Linux containers. Production runtime/host choice is not yet approved. A container is defense-in-depth, not a complete sandbox guarantee; production use is blocked on a documented host-kernel/runtime threat review and adversarial escape/resource tests. Evaluate stronger isolation (for example, gVisor or a microVM) only if it is supported without violating cost/operations constraints.
+The initial worker implementation is a separate standard-library HTTP service and Docker job launcher under `PythonExecutionService/`. BackendAPI has no source execution code and calls only this internal boundary when both worker URL and token are configured. The launcher requires access to the Docker daemon to create and kill per-job containers; that privileged control plane is part of the threat boundary and must be isolated from the API and reviewed. Each job container is created with no network, host mounts, socket mount, passed secrets, or extra environment; it uses a read-only root, non-root UID, dropped capabilities, no-new-privileges, CPU/memory/process/disk limits, bounded queue slots, and an external timeout that kills the named container. Production runtime/host choice is not yet approved. The local Docker Linux daemon is unavailable; runtime operation and all isolation controls remain unverified. A container is defense-in-depth, not a complete sandbox guarantee; production use is blocked on documented host-kernel/runtime review and adversarial escape/resource tests.
 
 ## Consequences
 
-This permits real Python while separating it from application state, but requires image maintenance, queue admission control, cleanup, monitoring, and hostile-input testing. Packages such as NumPy/Pandas increase image size and memory; later regions need tiered resource profiles and pinned images. No execution worker is implemented yet.
+This permits real Python only when the isolated worker runtime is configured and healthy. The initial worker supports function-style JSON input/output cases; standard-input challenges and additional package profiles remain unsupported. Source is currently retained in submission rows without automatic expiry. Worker responses are untrusted and checked against stored submission identity, challenge version, evaluator version, and test counts before backend scoring. No worker connection, isolated execution, or reward integration has been verified in this environment. The worker has no database credentials and cannot modify progression directly.
 
 ## Threat model and controls
 
@@ -34,10 +34,10 @@ This permits real Python while separating it from application state, but require
 
 ### Outstanding security decisions
 
-1. Production host OS and supported isolation runtime, including whether container-only isolation meets risk tolerance.
+1. Production host OS and supported isolation runtime, including whether container-only isolation meets risk tolerance. The initial worker launcher has not received adversarial review.
 2. Queue and concurrency quotas per account/class and total host capacity.
 3. Exact permitted modules and separate standard-library/NumPy/Pandas image profiles.
-4. Challenge/source retention and diagnostic logging policy.
+4. Challenge/source retention and diagnostic logging policy. Student source currently has no automatic expiry.
 5. Adversarial test ownership, security review cadence, patch SLA, and incident response.
 
 ## References

@@ -11,6 +11,9 @@ ROOT = Path(__file__).resolve().parents[2]
 EXPECTED_TABLES = {
     "achievement_definitions",
     "coding_challenge_definitions",
+    "challenge_hidden_test_cases",
+    "challenge_hints",
+    "player_challenge_hint_unlocks",
     "curriculum_regions",
     "learning_objectives",
     "player_achievement_awards",
@@ -25,6 +28,7 @@ EXPECTED_TABLES = {
     "quest_objective_rules",
     "quest_reward_rules",
     "submission_records",
+    "evaluation_attempts",
 }
 
 

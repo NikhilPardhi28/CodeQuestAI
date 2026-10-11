@@ -13,6 +13,7 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
+    Text,
     UniqueConstraint,
     Uuid,
     func,
@@ -401,6 +402,12 @@ class CodingChallengeDefinition(Base):
         ),
         CheckConstraint("version > 0", name="ck_challenge_version_positive"),
         CheckConstraint("length(content_digest) = 64", name="ck_challenge_content_digest_length"),
+        CheckConstraint("time_limit_ms BETWEEN 100 AND 5000", name="ck_challenge_time_limit"),
+        CheckConstraint(
+            "output_limit_bytes BETWEEN 1024 AND 65536", name="ck_challenge_output_limit"
+        ),
+        CheckConstraint("max_source_bytes BETWEEN 1 AND 65536", name="ck_challenge_source_limit"),
+        CheckConstraint("passing_score BETWEEN 1 AND 100", name="ck_challenge_passing_score"),
         Index("ix_challenges_objective_published", "objective_slug", "is_published"),
     )
 
@@ -412,8 +419,85 @@ class CodingChallengeDefinition(Base):
     statement: Mapped[str] = mapped_column(String(4000), nullable=False)
     public_content: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     content_digest: Mapped[str] = mapped_column(String(64), nullable=False)
+    time_limit_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=5000)
+    output_limit_bytes: Mapped[int] = mapped_column(Integer, nullable=False, default=65536)
+    max_source_bytes: Mapped[int] = mapped_column(Integer, nullable=False, default=32768)
+    passing_score: Mapped[int] = mapped_column(Integer, nullable=False, default=70)
+    evaluator_version: Mapped[str] = mapped_column(String(40), nullable=False, default="python-v1")
     is_published: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class ChallengeHiddenTestCase(Base):
+    __tablename__ = "challenge_hidden_test_cases"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["challenge_slug", "challenge_version"],
+            ["coding_challenge_definitions.slug", "coding_challenge_definitions.version"],
+            name="fk_hidden_test_challenge_version",
+            ondelete="RESTRICT",
+        ),
+        CheckConstraint("position >= 0", name="ck_hidden_test_position_nonnegative"),
+        UniqueConstraint(
+            "challenge_slug", "challenge_version", "position", name="uq_hidden_test_position"
+        ),
+        Index("ix_hidden_tests_challenge", "challenge_slug", "challenge_version"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    challenge_slug: Mapped[str] = mapped_column(String(100), nullable=False)
+    challenge_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    test_definition: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+
+
+class ChallengeHint(Base):
+    __tablename__ = "challenge_hints"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["challenge_slug", "challenge_version"],
+            ["coding_challenge_definitions.slug", "coding_challenge_definitions.version"],
+            name="fk_challenge_hint_version",
+            ondelete="RESTRICT",
+        ),
+        CheckConstraint("level > 0", name="ck_challenge_hint_level_positive"),
+        UniqueConstraint(
+            "challenge_slug", "challenge_version", "level", name="uq_challenge_hint_level"
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    challenge_slug: Mapped[str] = mapped_column(String(100), nullable=False)
+    challenge_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    level: Mapped[int] = mapped_column(Integer, nullable=False)
+    content: Mapped[str] = mapped_column(String(1000), nullable=False)
+
+
+class PlayerChallengeHintUnlock(Base):
+    __tablename__ = "player_challenge_hint_unlocks"
+    __table_args__ = (
+        ForeignKeyConstraint(["player_profile_id"], ["player_profiles.id"], ondelete="CASCADE"),
+        ForeignKeyConstraint(
+            ["challenge_slug", "challenge_version", "level"],
+            [
+                "challenge_hints.challenge_slug",
+                "challenge_hints.challenge_version",
+                "challenge_hints.level",
+            ],
+            ondelete="CASCADE",
+        ),
+        Index(
+            "ix_player_challenge_hints", "player_profile_id", "challenge_slug", "challenge_version"
+        ),
+    )
+
+    player_profile_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
+    challenge_slug: Mapped[str] = mapped_column(String(100), primary_key=True)
+    challenge_version: Mapped[int] = mapped_column(Integer, primary_key=True)
+    level: Mapped[int] = mapped_column(Integer, primary_key=True)
+    unlocked_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
 
@@ -437,15 +521,24 @@ class SubmissionRecord(Base):
             "player_profile_id", "client_submission_id", name="uq_submission_client_id_per_player"
         ),
         CheckConstraint(
-            "status IN ('received', 'queued', 'running', 'passed', 'failed', 'error')",
+            "status IN ('queued', 'running', 'passed', 'failed', 'timed_out', 'internal_error')",
             name="ck_submission_status",
         ),
         CheckConstraint(
             "source_digest IS NULL OR length(source_digest) = 64",
             name="ck_submission_digest_length",
         ),
+        CheckConstraint(
+            "source_code IS NULL OR length(source_code) <= 32768",
+            name="ck_submission_source_length",
+        ),
+        CheckConstraint(
+            "request_hash IS NULL OR length(request_hash) = 64",
+            name="ck_submission_request_hash_length",
+        ),
         Index("ix_submissions_player_created", "player_profile_id", "created_at"),
         Index("ix_submissions_challenge_created", "challenge_slug", "created_at"),
+        Index("ix_submission_queue_status_created", "status", "created_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -453,9 +546,38 @@ class SubmissionRecord(Base):
     challenge_slug: Mapped[str] = mapped_column(String(100), nullable=False)
     challenge_version: Mapped[int] = mapped_column(Integer, nullable=False)
     client_submission_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
-    status: Mapped[str] = mapped_column(String(20), nullable=False, default="received")
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="queued")
     source_digest: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    source_code: Mapped[str | None] = mapped_column(Text, nullable=True)
+    request_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
     result_summary: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class EvaluationAttempt(Base):
+    __tablename__ = "evaluation_attempts"
+    __table_args__ = (
+        ForeignKeyConstraint(["submission_id"], ["submission_records.id"], ondelete="CASCADE"),
+        CheckConstraint("attempt_number > 0", name="ck_evaluation_attempt_number_positive"),
+        CheckConstraint(
+            "status IN ('queued', 'running', 'passed', 'failed', 'timed_out', 'internal_error')",
+            name="ck_evaluation_attempt_status",
+        ),
+        UniqueConstraint("submission_id", "attempt_number", name="uq_evaluation_attempt_number"),
+        UniqueConstraint("submission_id", name="uq_evaluation_attempt_single_per_submission"),
+        Index("ix_evaluation_attempts_status_created", "status", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    submission_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
+    attempt_number: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="queued")
+    worker_version: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    result: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )

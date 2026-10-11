@@ -16,6 +16,7 @@ namespace CodeQuest.Gameplay.Quests
         public string description;
         public QuestObjectiveKind kind;
         public string targetId;
+        [Min(1)] public int targetVersion = 1;
         [Min(1)] public int targetCount = 1;
     }
 

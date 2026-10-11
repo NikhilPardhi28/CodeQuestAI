@@ -32,8 +32,8 @@ def test_public_catalog_queries_return_latest_published_rows(db_session) -> None
     regions, total = catalog.list_regions(db_session, limit=2, offset=0)
     assert total == 3
     assert [region.slug for region in regions] == ["variable-vale", "typeworks"]
-    assert catalog.get_quest(db_session, "light-the-signal").version == 1
-    assert catalog.get_challenge(db_session, "signal-coordinate").version == 1
+    assert catalog.get_quest(db_session, "light-the-signal").version == 2
+    assert catalog.get_challenge(db_session, "signal-coordinate").version == 2
 
 
 def test_profile_identity_subject_is_unique(db_session) -> None:
@@ -88,7 +88,7 @@ def test_submission_idempotency_key_is_unique_per_player(db_session) -> None:
         challenge_slug="signal-coordinate",
         challenge_version=1,
         client_submission_id=client_submission_id,
-        status="received",
+        status="queued",
     )
     db_session.add(row)
     db_session.commit()

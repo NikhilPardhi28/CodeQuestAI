@@ -28,6 +28,14 @@ namespace CodeQuest.Networking
         public Task<ApiResult<PageDto<ObjectiveDto>>> GetObjectivesAsync(CancellationToken token) => GetAsync<PageDto<ObjectiveDto>>("/api/v1/curriculum/objectives", false, token);
         public Task<ApiResult<PageDto<QuestDto>>> GetQuestsAsync(CancellationToken token) => GetAsync<PageDto<QuestDto>>("/api/v1/quests", false, token);
         public Task<ApiResult<PageDto<ChallengeDto>>> GetChallengesAsync(CancellationToken token) => GetAsync<PageDto<ChallengeDto>>("/api/v1/challenges", false, token);
+        public Task<ApiResult<ChallengeDto>> GetChallengeAsync(string slug, int version, CancellationToken token) =>
+            GetAsync<ChallengeDto>("/api/v1/challenges/" + Uri.EscapeDataString(slug) + "/versions/" + version, false, token);
+        public Task<ApiResult<ChallengeHintDto>> GetChallengeHintAsync(string slug, int version, int level, CancellationToken token) =>
+            GetAsync<ChallengeHintDto>("/api/v1/challenges/" + Uri.EscapeDataString(slug) + "/hints?version=" + version + "&level=" + level, true, token);
+        public Task<ApiResult<ChallengeSubmissionDto>> SubmitChallengeAsync(string slug, ChallengeSubmissionRequestDto request, CancellationToken token) =>
+            PostAsync<ChallengeSubmissionRequestDto, ChallengeSubmissionDto>("/api/v1/challenges/" + Uri.EscapeDataString(slug) + "/submissions", request, token);
+        public Task<ApiResult<ChallengeSubmissionDto>> GetMySubmissionAsync(string submissionId, CancellationToken token) =>
+            GetAsync<ChallengeSubmissionDto>("/api/v1/me/submissions/" + Uri.EscapeDataString(submissionId), true, token);
         public Task<ApiResult<PlayerProfileDto>> GetMyProfileAsync(CancellationToken token) => GetAsync<PlayerProfileDto>("/api/v1/me", true, token);
         public Task<ApiResult<PlayerProfileDto>> SaveMyProfileAsync(PlayerProfileUpsertDto profile, CancellationToken token) => PutAsync<PlayerProfileUpsertDto, PlayerProfileDto>("/api/v1/me", profile, token);
         public Task<ApiResult<ProgressionDto>> GetMyProgressionAsync(CancellationToken token) => GetAsync<ProgressionDto>("/api/v2/me/progression", true, token);
@@ -81,7 +89,7 @@ namespace CodeQuest.Networking
                 try
                 {
                     if (_tokenProvider == null || !_tokenProvider.TryGetAccessToken(out accessToken) || string.IsNullOrWhiteSpace(accessToken))
-                        return Failure<T>("authentication_required", "Sign in is required to view this profile.", 401);
+                        return Failure<T>("authentication_required", "Sign in is required to use this service.", 401);
                 }
                 catch (Exception)
                 {
@@ -141,7 +149,7 @@ namespace CodeQuest.Networking
             try
             {
                 if (_tokenProvider == null || !_tokenProvider.TryGetAccessToken(out accessToken) || string.IsNullOrWhiteSpace(accessToken))
-                    return Failure<TResponse>("authentication_required", "Sign in is required to save this profile.", 401);
+                    return Failure<TResponse>("authentication_required", "Sign in is required to use this service.", 401);
             }
             catch (Exception)
             {
@@ -194,12 +202,12 @@ namespace CodeQuest.Networking
             if (string.IsNullOrWhiteSpace(_baseUrl) || !Uri.TryCreate(_baseUrl, UriKind.Absolute, out var baseUri) ||
                 (baseUri.Scheme != Uri.UriSchemeHttp && baseUri.Scheme != Uri.UriSchemeHttps))
                 return Failure<TResponse>("api_configuration_invalid", "The API base URL is not configured.", 0);
-            if (payload == null) return Failure<TResponse>("request_invalid", "Quest event data is required.", 0);
+            if (payload == null) return Failure<TResponse>("request_invalid", "Request data is required.", 0);
             string accessToken;
             try
             {
                 if (_tokenProvider == null || !_tokenProvider.TryGetAccessToken(out accessToken) || string.IsNullOrWhiteSpace(accessToken))
-                    return Failure<TResponse>("authentication_required", "Sign in is required to save quest progress.", 401);
+                    return Failure<TResponse>("authentication_required", "Sign in is required to use this service.", 401);
             }
             catch (Exception)
             {

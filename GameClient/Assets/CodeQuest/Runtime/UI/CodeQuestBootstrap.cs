@@ -61,6 +61,7 @@ namespace CodeQuest.UI
         {
             var quest = ScriptableObject.CreateInstance<QuestDefinition>();
             quest.questId = "light-the-signal";
+            quest.version = 2;
             quest.version = 1;
             quest.category = QuestCategory.Main;
             quest.title = "The Signal Keeper";
@@ -69,7 +70,7 @@ namespace CodeQuest.UI
             {
                 new QuestObjectiveDefinition { id = "activate-relay", description = "Activate the relay switch", kind = QuestObjectiveKind.Interact, targetId = "relay-switch", targetCount = 1 },
                 new QuestObjectiveDefinition { id = "reach-platform", description = "Reach the signal platform", kind = QuestObjectiveKind.Checkpoint, targetId = "signal-platform", targetCount = 1 },
-                new QuestObjectiveDefinition { id = "pass-signal-challenge", description = "Complete the signal coding challenge", kind = QuestObjectiveKind.ChallengePassed, targetId = "signal-coordinate", targetCount = 1 }
+                new QuestObjectiveDefinition { id = "pass-signal-challenge", description = "Complete the signal coding challenge", kind = QuestObjectiveKind.ChallengePassed, targetId = "signal-coordinate", targetVersion = 2, targetCount = 1 }
             };
             quests.Register(quest);
             quests.Activate(quest.questId);

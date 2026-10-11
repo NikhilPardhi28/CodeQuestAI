@@ -79,8 +79,63 @@ namespace CodeQuest.Networking
 
     [Serializable] public sealed class ChallengeContentDto
     {
+        public string mode;
+        public string functionName;
+        public string functionSignature;
+        public string starterCode;
         public string[] examples;
         public string[] visibleHints;
+        public string expectedOutputFormat;
+    }
+
+    [Serializable] public sealed class ChallengeSubmissionRequestDto
+    {
+        public string clientSubmissionId;
+        public int challengeVersion;
+        public string source;
+    }
+
+    [Serializable] public sealed class ChallengeHintDto
+    {
+        public string challengeSlug;
+        public int challengeVersion;
+        public int level;
+        public string content;
+    }
+
+    [Serializable] public sealed class SubmissionResultDto
+    {
+        public int scorePercent;
+        public int passedTests;
+        public int totalTests;
+        public bool hasResult;
+        public SubmissionVisibleResultDto[] visibleResults;
+        public SubmissionDiagnosticDto[] diagnostics;
+    }
+
+    [Serializable] public sealed class SubmissionVisibleResultDto
+    {
+        public bool passed;
+        public string diagnosticCode;
+        public string message;
+    }
+
+    [Serializable] public sealed class SubmissionDiagnosticDto
+    {
+        public string code;
+        public string message;
+    }
+
+    [Serializable] public sealed class ChallengeSubmissionDto
+    {
+        public string id;
+        public string challengeSlug;
+        public int challengeVersion;
+        public string clientSubmissionId;
+        public string status;
+        public SubmissionResultDto result;
+        public string createdAt;
+        public string completedAt;
     }
 
     [Serializable] public sealed class PlayerProfileDto

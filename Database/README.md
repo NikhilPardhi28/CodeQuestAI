@@ -27,10 +27,11 @@ PostgreSQL is the persistence target. Schema changes are authored as immutable A
    ```
 
 The named volume persists data after `down`. Removing that volume deletes local database data; do so only when you intend to reset the disposable development database.
+Challenge source is persisted for delivery to the separately configured worker. Automatic source retention/deletion policy remains unresolved.
 
 ## Migration policy
 
-- The initial schema migration is `20261011_0001`; `20261011_0002` adds quest rules, progress revisions, idempotency receipts, and the XP reward ledger.
+- `20261011_0001` creates the initial schema; `20261011_0002` adds quest rules, progress revisions, idempotency receipts, and the XP reward ledger; `20261011_0003` adds challenge evaluation limits, private hidden tests, progressive hints, submission source/idempotency, and durable evaluation attempts.
 - Use `uv run python -m alembic revision --autogenerate -m "short-description"` only to draft; review the generated migration against both model metadata and PostgreSQL behavior before committing.
 - Test new revisions on a fresh database and from the previous revision. Never edit an applied migration; add a corrective revision.
 - Deployment changes use expand/backfill/contract. Content rows are versioned and published revisions are immutable.
@@ -38,7 +39,7 @@ The named volume persists data after `down`. Removing that volume deletes local 
 
 ## Seed data
 
-`python -m BackendAPI.app.db.seed` inserts only missing rows. It never overwrites existing content. Current development content covers three regions, six objectives, three quests and their event rules/targets, three public challenges, and two achievements. It includes no player accounts, hidden tests, solutions, or learner submission source.
+`python -m BackendAPI.app.db.seed` inserts only missing rows. It never overwrites existing content. Current development content covers three regions, six objectives, three quests and their event rules/targets, three public challenges with separate hidden tests and progressive hints, and two achievements. It includes no player accounts, reference solutions, or learner submission source.
 
 ## PostgreSQL integration tests
 

@@ -1,6 +1,7 @@
 from functools import lru_cache
+from urllib.parse import urlsplit
 
-from pydantic import model_validator
+from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -18,6 +19,9 @@ class Settings(BaseSettings):
     auth_issuer: str | None = None
     auth_audience: str | None = None
     auth_jwks_url: str | None = None
+    evaluation_worker_url: str | None = None
+    evaluation_worker_token: SecretStr | None = None
+    evaluation_queue_limit: int = 500
 
     @model_validator(mode="after")
     def validate_auth_configuration(self) -> "Settings":
@@ -27,6 +31,38 @@ class Settings(BaseSettings):
                 "CODEQUEST_AUTH_ISSUER, CODEQUEST_AUTH_AUDIENCE, and "
                 "CODEQUEST_AUTH_JWKS_URL must be configured together"
             )
+        if (self.evaluation_worker_url is None) != (self.evaluation_worker_token is None):
+            raise ValueError(
+                "CODEQUEST_EVALUATION_WORKER_URL and CODEQUEST_EVALUATION_WORKER_TOKEN "
+                "must be configured together"
+            )
+        if self.evaluation_worker_url is not None:
+            parsed_worker_url = urlsplit(self.evaluation_worker_url)
+            if parsed_worker_url.scheme not in {"http", "https"} or not parsed_worker_url.hostname:
+                raise ValueError("CODEQUEST_EVALUATION_WORKER_URL must be an absolute HTTP(S) URL")
+            if (
+                parsed_worker_url.username
+                or parsed_worker_url.password
+                or parsed_worker_url.fragment
+            ):
+                raise ValueError(
+                    "CODEQUEST_EVALUATION_WORKER_URL cannot contain credentials or fragments"
+                )
+            if parsed_worker_url.scheme == "http" and parsed_worker_url.hostname not in {
+                "127.0.0.1",
+                "localhost",
+                "::1",
+            }:
+                raise ValueError("Non-local evaluation worker URLs must use HTTPS")
+            if (
+                not self.evaluation_worker_token
+                or len(self.evaluation_worker_token.get_secret_value()) < 32
+            ):
+                raise ValueError(
+                    "CODEQUEST_EVALUATION_WORKER_TOKEN must contain at least 32 characters"
+                )
+        if self.evaluation_queue_limit < 1 or self.evaluation_queue_limit > 5000:
+            raise ValueError("CODEQUEST_EVALUATION_QUEUE_LIMIT must be between 1 and 5000")
         return self
 
     @property

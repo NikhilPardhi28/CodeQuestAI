@@ -252,8 +252,11 @@ def submit_quest_event(
     profile: PlayerProfile,
     quest_slug: str,
     payload: QuestEventRequest,
+    *,
+    commit: bool = True,
 ) -> dict[str, Any]:
     payload_hash = _canonical_hash(quest_slug, payload)
+    savepoint = None if commit else session.begin_nested()
     try:
         prior = session.scalar(
             select(PlayerQuestEvent).where(
@@ -511,20 +514,33 @@ def submit_quest_event(
 
         response = _build_response(session, row, granted, progression)
         event_record.response = response
-        session.commit()
+        if commit:
+            session.commit()
+        else:
+            session.flush()
+            savepoint.commit()
         return response
     except QuestEventError:
-        session.rollback()
+        if commit:
+            session.rollback()
+        elif savepoint is not None:
+            savepoint.rollback()
         raise
     except IntegrityError as exc:
-        session.rollback()
+        if commit:
+            session.rollback()
+        elif savepoint is not None:
+            savepoint.rollback()
         raise QuestEventError(
             409,
             "quest_event_conflict",
             "The event conflicts with an existing quest or reward record.",
         ) from exc
     except Exception:
-        session.rollback()
+        if commit:
+            session.rollback()
+        elif savepoint is not None:
+            savepoint.rollback()
         raise
 
 

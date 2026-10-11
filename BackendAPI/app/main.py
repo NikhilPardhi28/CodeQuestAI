@@ -15,6 +15,7 @@ from BackendAPI.app.api.health import router as health_router
 from BackendAPI.app.api.router import api_v1, api_v2
 from BackendAPI.app.schemas import ApiError
 from BackendAPI.app.services.quest_events import QuestEventError
+from BackendAPI.app.services.submissions import SubmissionError
 
 logger = logging.getLogger("codequest.api")
 ERROR_RESPONSES = {
@@ -23,6 +24,9 @@ ERROR_RESPONSES = {
     404: {"model": ApiError, "description": "Resource not found"},
     409: {"model": ApiError, "description": "State conflict"},
     422: {"model": ApiError, "description": "Request validation failed"},
+    413: {"model": ApiError, "description": "Request body exceeds a supported limit"},
+    429: {"model": ApiError, "description": "Submission rate limit exceeded"},
+    502: {"model": ApiError, "description": "Evaluation worker returned an invalid result"},
     500: {"model": ApiError, "description": "Unexpected server error"},
     503: {"model": ApiError, "description": "A required dependency is unavailable"},
 }
@@ -34,7 +38,7 @@ def create_app() -> FastAPI:
         version="0.1.0",
         description=(
             "Versioned CodeQuest AI backend contracts. Learner-owned routes require a valid "
-            "OIDC bearer token; challenge execution is not provided by this API yet."
+            "OIDC bearer token; Python evaluation is delegated to a separate worker service."
         ),
         openapi_url="/openapi.json",
         docs_url="/docs",
@@ -130,6 +134,18 @@ def create_app() -> FastAPI:
                 **error_payload(request, exc.code, exc.message, retryable=exc.status_code >= 500),
                 "currentState": exc.current_state,
             },
+        )
+
+    @app.exception_handler(SubmissionError)
+    async def submission_error(request: Request, exc: SubmissionError):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=error_payload(
+                request,
+                exc.code,
+                exc.message,
+                retryable=exc.status_code == 503,
+            ),
         )
 
     @app.exception_handler(RequestValidationError)

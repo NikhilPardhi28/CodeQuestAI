@@ -21,7 +21,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["BackendAPI/tests", "Tests/backend"]
+testpaths = ["BackendAPI/tests", "PythonExecutionService", "Tests/backend"]
 python_files = ["test_*.py"]
 addopts = "-ra --strict-markers"
 markers = [

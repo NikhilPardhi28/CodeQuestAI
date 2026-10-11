@@ -37,6 +37,10 @@ def run_migrations_online() -> None:
         with connectable.connect() as connection:
             if connection.dialect.name == "postgresql":
                 connection.exec_driver_sql("SET TIME ZONE 'UTC'")
+                # SQLAlchemy 2.x autobegins a transaction for SET. Commit it before
+                # Alembic starts its migration transaction, or connection close would
+                # roll back the nested migration work with the outer transaction.
+                connection.commit()
             context.configure(
                 connection=connection,
                 target_metadata=target_metadata,

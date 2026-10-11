@@ -12,8 +12,9 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from BackendAPI.app.api.health import router as health_router
-from BackendAPI.app.api.router import api_v1
+from BackendAPI.app.api.router import api_v1, api_v2
 from BackendAPI.app.schemas import ApiError
+from BackendAPI.app.services.quest_events import QuestEventError
 
 logger = logging.getLogger("codequest.api")
 ERROR_RESPONSES = {
@@ -42,6 +43,7 @@ def create_app() -> FastAPI:
     )
     app.include_router(health_router)
     app.include_router(api_v1)
+    app.include_router(api_v2)
 
     @app.middleware("http")
     async def correlate_request(request: Request, call_next):
@@ -94,6 +96,10 @@ def create_app() -> FastAPI:
                 "The requested learning objective was not found.",
             ),
             "quest_not_found": ("quest_not_found", "The requested quest was not found."),
+            "quest_version_not_found": (
+                "quest_version_not_found",
+                "The requested published quest version was not found.",
+            ),
             "challenge_not_found": (
                 "challenge_not_found",
                 "The requested challenge was not found.",
@@ -114,6 +120,16 @@ def create_app() -> FastAPI:
             status_code=exc.status_code,
             headers=exc.headers,
             content=error_payload(request, code, message, retryable=exc.status_code == 503),
+        )
+
+    @app.exception_handler(QuestEventError)
+    async def quest_event_error(request: Request, exc: QuestEventError):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                **error_payload(request, exc.code, exc.message, retryable=exc.status_code >= 500),
+                "currentState": exc.current_state,
+            },
         )
 
     @app.exception_handler(RequestValidationError)

@@ -3,7 +3,6 @@ import tomllib
 from pathlib import Path
 
 import pytest
-from BackendAPI.app.main import app
 from BackendAPI.app.schemas import Page, PlayerProfileUpsert
 from pydantic import ValidationError
 
@@ -26,12 +25,17 @@ def test_example_configuration_has_no_live_credentials() -> None:
 
 
 def test_checked_in_openapi_matches_the_running_contract() -> None:
-    spec_path = ROOT / "Documentation" / "api" / "openapi-v1.json"
-    checked_in = json.loads(spec_path.read_text(encoding="utf-8"))
-    generated = app.openapi()
-    assert checked_in == generated
-    assert "/api/v1/curriculum/regions" in generated["paths"]
-    assert "/api/v1/me" in generated["paths"]
+    from Tools.export_openapi import SPEC_PATHS, render_openapi
+
+    for version, spec_path in SPEC_PATHS.items():
+        checked_in = json.loads(spec_path.read_text(encoding="utf-8"))
+        generated = json.loads(render_openapi(version))
+        assert checked_in == generated
+        if version == "v1":
+            assert "/api/v1/curriculum/regions" in generated["paths"]
+            assert "/api/v1/me" in generated["paths"]
+        else:
+            assert "/api/v2/me/quests/{quest_slug}/events" in generated["paths"]
 
 
 def test_profile_and_pagination_schemas_reject_invalid_values() -> None:

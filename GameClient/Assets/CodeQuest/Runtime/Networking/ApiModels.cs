@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using CodeQuest.Gameplay.Quests;
 
 namespace CodeQuest.Networking
 {
@@ -9,6 +10,7 @@ namespace CodeQuest.Networking
         public string message;
         public bool retryable;
         public string correlationId;
+        public QuestProgressDto currentState;
     }
 
     [Serializable] public sealed class HealthDto { public string status; }
@@ -101,6 +103,8 @@ namespace CodeQuest.Networking
         public string questSlug;
         public int questVersion;
         public string status;
+        public int revision;
+        public QuestObjectiveProgressDto[] objectiveProgress;
         public string createdAt;
         public string updatedAt;
     }
@@ -131,5 +135,13 @@ namespace CodeQuest.Networking
         public string sourceDigest;
         public string createdAt;
         public string completedAt;
+    }
+
+    [Serializable] public sealed class QuestObjectiveProgressDto
+    {
+        public string objectiveId;
+        public int completedCount;
+        public int requiredCount;
+        public bool completed;
     }
 }

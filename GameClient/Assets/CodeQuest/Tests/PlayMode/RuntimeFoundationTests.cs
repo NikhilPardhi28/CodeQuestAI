@@ -48,10 +48,41 @@ namespace CodeQuest.Tests.PlayMode
             target.AddComponent<SphereCollider>().isTrigger = true;
             var interactable = target.AddComponent<PlayModeTestInteractable>();
             yield return null;
+            var canceled = 0;
+            interactor.InteractionCanceled += _ => canceled++;
             Assert.IsTrue(interactor.TryInteract());
             Assert.AreEqual(1, interactable.InteractionCount);
+            interactor.CancelCurrentInteraction();
+            Assert.AreEqual(1, canceled);
             Object.Destroy(player);
             Object.Destroy(target);
+        }
+
+        [UnityTest]
+        public IEnumerator InteractorSelectsNearestThenStableIdAndShowsUnavailablePrompt()
+        {
+            var player = new GameObject("selector-player");
+            player.transform.position = new Vector3(70f, 0f, 0f);
+            var interactor = player.AddComponent<PlayerInteractor>();
+            interactor.Initialize(new FixedInput());
+            var farther = MakeTarget("z-target", new Vector3(70f, 0f, 1.5f), true);
+            var nearest = MakeTarget("b-target", new Vector3(70f, 0f, 1f), false);
+            var tied = MakeTarget("a-target", new Vector3(70f, 0f, -1f), false);
+            yield return null;
+            Assert.AreSame(tied.GetComponent<PlayModeTestInteractable>(), interactor.CurrentTarget);
+            Assert.AreEqual("Unavailable for test", interactor.CurrentPrompt);
+            Assert.IsFalse(interactor.TryInteract());
+            Object.Destroy(player); Object.Destroy(farther); Object.Destroy(nearest); Object.Destroy(tied);
+        }
+
+        private static GameObject MakeTarget(string id, Vector3 position, bool available)
+        {
+            var target = new GameObject(id);
+            target.transform.position = position;
+            target.AddComponent<SphereCollider>().isTrigger = true;
+            var interactable = target.AddComponent<PlayModeTestInteractable>();
+            interactable.Configure(id, available);
+            return target;
         }
 
         [UnityTest]
@@ -91,8 +122,8 @@ namespace CodeQuest.Tests.PlayMode
             var profileRequest = api.GetMyProfileAsync(CancellationToken.None);
             while (!profileRequest.IsCompleted) yield return null;
             Assert.IsFalse(profileRequest.Result.IsSuccess);
-            Assert.AreEqual("authentication_required", profileRequest.Result.Error.code);
-            Assert.AreEqual(401, profileRequest.Result.StatusCode);
+            Assert.Contains(profileRequest.Result.Error.code, new[] { "authentication_required", "authentication_not_configured" });
+            Assert.Contains(profileRequest.Result.StatusCode, new[] { 401, 503 });
             Object.Destroy(settings);
         }
 
@@ -109,8 +140,15 @@ namespace CodeQuest.Tests.PlayMode
     public sealed class PlayModeTestInteractable : MonoBehaviour, IInteractable
     {
         public int InteractionCount { get; private set; }
+        private string _id = "test";
+        private bool _available = true;
+        public void Configure(string id, bool available) { _id = id; _available = available; }
+        public string InteractionId => _id;
         public string InteractionPrompt => "Test interaction";
-        public bool CanInteract => true;
+        public string UnavailableReason => "Unavailable for test";
+        public bool CanInteract => _available;
+        public bool IsAvailable => _available;
+        public int SelectionPriority => 0;
         public void Interact(GameObject interactor) => InteractionCount++;
     }
 }

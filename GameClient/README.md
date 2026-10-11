@@ -45,7 +45,7 @@ uv run python -m BackendAPI.app.db.seed
 uv run python -m uvicorn BackendAPI.app.main:app --reload
 ```
 
-The Unity client calls `/healthz`, `/readyz`, `/api/v1/curriculum/regions`, `/api/v1/curriculum/objectives`, `/api/v1/quests`, `/api/v1/challenges`, and authenticated `/api/v1/me`. Response DTOs follow the checked-in [OpenAPI contract](../Documentation/api/openapi-v1.json); no sample/fake response is substituted when the API is unavailable. The profile call currently returns a local unauthenticated state.
+The Unity client calls the public `/healthz`, `/readyz`, and v1 catalog routes plus v2 authenticated quest/progression reads and quest event writes. Response shapes follow [OpenAPI v1](../Documentation/api/openapi-v1.json) and [OpenAPI v2](../Documentation/api/openapi-v2.json); no fake response or credential is substituted when the API is unavailable. The current Bootstrap composition still uses an unauthenticated token provider, so protected quest requests fail closed until a real OIDC adapter is selected and configured.
 
 ## Tests
 
@@ -53,6 +53,6 @@ After opening the project and allowing compilation, use **Window → General →
 
 ## Limits and next milestone
 
-The current Unity client is a greybox runtime foundation. It does not include authored world scenes/assets, controller remapping, a configured OIDC identity provider, profile sign-in, profile writes, persistence, quest mutation, dialogue, challenge authoring/execution, multiplayer, or production error telemetry. Scene transitions are available through the build-settings-backed service interface but no additional scenes exist yet. The Unity editor must generate the initial scene/settings and lockfile before compilation or PlayMode status can be claimed.
+The current Unity client is a greybox runtime foundation. Quest events are submitted through v2 and objective/status changes remain pending or failed until server confirmation. Its retry queue is bounded to 32 in-memory events and is lost on restart; queued events are never labeled cloud-saved. There is no configured OIDC identity provider, profile sign-in, authored world content, controller remapping, challenge submission/evaluation, multiplayer, or production error telemetry. The Unity editor must be licensed and compile the current changes before compilation or PlayMode status can be claimed.
 
-Next milestone: reusable world interaction and authored interactables, followed by quest state, dialogue, player persistence, and the learning challenge framework against the existing backend contracts.
+Next milestone: complete Unity verification of the quest event client and configure a supported OIDC adapter; then implement trusted challenge submission/evaluation so the existing challenge-backed XP rule can be exercised end to end.

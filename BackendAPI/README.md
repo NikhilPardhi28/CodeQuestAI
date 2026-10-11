@@ -1,6 +1,6 @@
 # BackendAPI foundation
 
-This directory contains the first FastAPI modular monolith implementation. See the generated [v1 API contract](../Documentation/api/README.md) for routes and limitations.
+This directory contains the FastAPI modular monolith. See the [API contract](../Documentation/api/README.md), generated [OpenAPI v1](../Documentation/api/openapi-v1.json), and generated [OpenAPI v2](../Documentation/api/openapi-v2.json).
 
 ## Local setup
 
@@ -23,15 +23,15 @@ Use typed settings sourced from environment variables. `CODEQUEST_` is the reser
 
 ## API and persistence rules
 
-- Public routes are under `/api/v1`; version schemas and generated OpenAPI deliberately.
+- Public catalog and legacy read routes remain under `/api/v1`; quest event writes and authoritative quest/progression reads are under `/api/v2`.
 - Error bodies use the stable envelope defined in `Documentation/04-services-data-security.md`.
 - Database schema changes use reviewed Alembic revisions under `Database/migrations/versions/`.
 - Use additive expand/contract migration steps for deployed compatibility; never mutate published challenge versions in place.
 - Services own repository interfaces; route handlers translate transport data and do not embed domain or SQL rules.
-- Health, catalog, profile, and caller-owned progress/award/submission-metadata routes are implemented under `/api/v1`. No execution, grading, progression-write, teacher/admin, or provider integration endpoints exist yet.
+- Health, catalog, profile, and legacy snapshots are implemented under `/api/v1`. V2 quest events validate registered server-authored rules and trusted passed submissions; XP and objective counts are never accepted from the client. Challenge submission/evaluation, arbitrary code execution, teacher/admin, and provider integration endpoints do not exist.
 
 ## Migration and development content
 
 Apply schema with `uv run python -m alembic upgrade head`; roll back one migration with `uv run python -m alembic downgrade -1`. Seed missing development catalog rows with `uv run python -m BackendAPI.app.db.seed`. See [Database setup](../Database/README.md).
 
-Run unit and SQLite migration tests with `uv run python -m pytest`. PostgreSQL integration tests require the isolated `CODEQUEST_TEST_DATABASE_URL` described in `Database/README.md`.
+Run backend tests with `uv run python -m pytest`. PostgreSQL migration and concurrency tests require the isolated, empty `CODEQUEST_TEST_DATABASE_URL` described in `Database/README.md`; SQLite alone does not verify PostgreSQL locking.

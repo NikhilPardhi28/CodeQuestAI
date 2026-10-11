@@ -17,8 +17,11 @@ ADRs distinguish accepted decisions from proposals. Create one numbered file per
 | 0009 | Installed Unity editor patch 6000.3.19f1 | Accepted |
 | 0010 | OIDC identity boundary, provider deferred | Accepted |
 | 0011 | Per-job restricted Linux container for Python execution | Accepted |
+| 0012 | Authoritative quest event ledger | Accepted |
 
 See [ADR-0007](0007-audience-and-privacy-gate.md), [ADR-0008](0008-initial-platforms.md), [ADR-0009](0009-unity-editor-version.md), [ADR-0010](0010-identity-provider-boundary.md), and [ADR-0011](0011-python-execution-isolation.md).
+
+Quest progression authority and event retention are captured in [ADR-0012](0012-authoritative-quest-event-ledger.md).
 
 ## ADR-0001 — Unity 6 with URP
 

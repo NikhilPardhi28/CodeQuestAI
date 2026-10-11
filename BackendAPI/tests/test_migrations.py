@@ -17,7 +17,13 @@ EXPECTED_TABLES = {
     "player_profiles",
     "player_progression",
     "player_quest_progress",
+    "player_quest_events",
+    "player_quest_reward_ledger",
     "quest_definitions",
+    "quest_event_targets",
+    "quest_objective_prerequisites",
+    "quest_objective_rules",
+    "quest_reward_rules",
     "submission_records",
 }
 

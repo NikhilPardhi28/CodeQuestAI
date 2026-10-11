@@ -22,6 +22,7 @@ def test_development_seed_is_idempotent(db_session) -> None:
         "quests": 0,
         "challenges": 0,
         "achievements": 0,
+        "questRules": 0,
     }
     assert second == first
     assert db_session.scalar(select(func.count()).select_from(CurriculumRegion)) == 3

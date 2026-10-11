@@ -30,7 +30,7 @@ The named volume persists data after `down`. Removing that volume deletes local 
 
 ## Migration policy
 
-- The initial schema migration is `20261011_0001`. It creates all current application tables and constraints.
+- The initial schema migration is `20261011_0001`; `20261011_0002` adds quest rules, progress revisions, idempotency receipts, and the XP reward ledger.
 - Use `uv run python -m alembic revision --autogenerate -m "short-description"` only to draft; review the generated migration against both model metadata and PostgreSQL behavior before committing.
 - Test new revisions on a fresh database and from the previous revision. Never edit an applied migration; add a corrective revision.
 - Deployment changes use expand/backfill/contract. Content rows are versioned and published revisions are immutable.
@@ -38,8 +38,8 @@ The named volume persists data after `down`. Removing that volume deletes local 
 
 ## Seed data
 
-`python -m BackendAPI.app.db.seed` inserts only missing `(slug, version)` rows. It never overwrites a row that already exists. Current development content covers the first three documented curriculum regions, six learning objectives, three quests, three public challenge definitions, and two achievement definitions. It includes no player accounts, hidden tests, solutions, or learner submission source.
+`python -m BackendAPI.app.db.seed` inserts only missing rows. It never overwrites existing content. Current development content covers three regions, six objectives, three quests and their event rules/targets, three public challenges, and two achievements. It includes no player accounts, hidden tests, solutions, or learner submission source.
 
 ## PostgreSQL integration tests
 
-The routine test suite uses isolated in-memory SQLite for fast constraints and a temporary SQLite file for Alembic upgrade/downgrade checks. PostgreSQL-specific migration coverage is skipped unless `CODEQUEST_TEST_DATABASE_URL` is set to a dedicated, empty database named exactly `codequest_test`. Never point it at a shared or production database.
+The routine test suite uses isolated in-memory SQLite for fast constraints and a temporary SQLite file for Alembic upgrade/downgrade checks. PostgreSQL migration and quest-concurrency coverage is skipped unless `CODEQUEST_TEST_DATABASE_URL` is set to a dedicated, empty database named exactly `codequest_test`. The concurrency test migrates and seeds that database, then downgrades it to base. Never point it at a shared or production database. SQLite tests do not establish PostgreSQL locking behavior.

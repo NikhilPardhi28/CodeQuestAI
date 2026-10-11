@@ -1,7 +1,7 @@
 {
   "name": "CodeQuest.Networking",
   "rootNamespace": "CodeQuest.Networking",
-  "references": ["CodeQuest.Core"],
+  "references": ["CodeQuest.Core", "CodeQuest.Gameplay"],
   "includePlatforms": [],
   "excludePlatforms": [],
   "allowUnsafeCode": false,

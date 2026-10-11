@@ -1,6 +1,6 @@
 # CodeQuest AI architecture baseline
 
-**Status:** architecture baseline, backend foundation, and first Unity runtime/API client scaffold, 2026-10-11. The repository has API contracts, an initial migration, seed catalog, backend tests, and Unity runtime source/package pins. Unity package resolution, URP/scene generation, compilation, and Test Runner execution await an active editor license. These documents still describe many planned systems rather than implemented features. `TBD` items are unresolved product/engineering choices; do not silently treat proposals as requirements.
+**Status:** architecture baseline plus Milestones 5 and 6 foundations, 2026-10-11. The repository contains versioned API contracts, reversible migrations, seed rules, backend service/tests, and Unity runtime source/package pins. The latest Milestone 6 Unity batch invocation could not establish a licensing-client connection, so current Unity compilation and Test Runner results remain unverified. These documents still describe many planned systems rather than implemented features. `TBD` items are unresolved product/engineering choices; do not silently treat proposals as requirements.
 
 ## Documents
 
@@ -14,6 +14,9 @@
 8. [Contributor and engineering conventions](../CONTRIBUTING.md)
 9. [Implemented v1 API contract and route inventory](api/README.md)
 10. [Database setup, migrations, and seed data](../Database/README.md)
+11. [Milestone 5 reusable gameplay foundation](milestone-5-gameplay.md)
+12. [Milestone 6 authoritative quest events](milestone-6-quest-events.md)
+13. [Generated OpenAPI v1](api/openapi-v1.json) and [OpenAPI v2](api/openapi-v2.json)
 
 ## Proposed documentation manifest
 
@@ -31,9 +34,9 @@ Documentation/
 
 ## Repository inventory at baseline
 
-The original inventory found empty component directories and no commits. The repository baseline adds root conventions/configuration, a pinned Python dependency project and `uv.lock`, validators, and CI. The backend foundation now adds FastAPI routes, SQLAlchemy models, Alembic migration, seed content, and API/database tests. There is still no Unity project/package manifest, Python execution worker, or dashboard package. `master` still has no commits, and no repository-specific `AGENTS.md` files were present at inspection.
+The initial baseline added root conventions/configuration, a pinned Python dependency project and `uv.lock`, validators, and CI. Later milestones added the nested Unity project, reusable gameplay foundation, FastAPI routes, SQLAlchemy models, two Alembic revisions, versioned quest rules, and tests. Python execution and dashboard packages remain future work. The active branch retains the existing Git history; do not rewrite prior checkpoints.
 
-Host tool discovery on 2026-10-11: Git 2.54.0.windows.1, Python 3.11.9, .NET SDK 10.0.303, Node 24.15.1, npm 11.12.1, Docker 29.6.1, Unity Editor 6000.3.19f1 at `C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Unity.exe`. uv 0.13.0 was installed for this task to generate the lockfile. Unity is installed, but no Unity project/package manifest exists. These are host observations; Unity patch and Python line are recorded as initial project targets.
+Host tool discovery recorded Unity Editor 6000.3.19f1 at `C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Unity.exe`; its exact patch and Python line are recorded in ADR-0009 and project settings. Docker CLI is installed, but the Linux engine is not running in the Milestone 6 environment. Unity licensing and PostgreSQL integration remain environment gates for the current verification run.
 
 ## Proposed component manifest
 
@@ -55,7 +58,7 @@ Each component should own its own build/dependency manifest. Cross-component con
 
 ## Baseline rules
 
-- Treat all architecture choices as proposals until accepted and recorded in an ADR. Accepted decisions 0007–0011 define the current initial audience/privacy gate, platform, Unity patch, identity boundary, and execution isolation.
+- Treat all architecture choices as proposals until accepted and recorded in an ADR. Accepted decisions 0007–0012 define the current audience/privacy gate, platform, Unity patch, identity boundary, execution isolation, and authoritative quest event ledger.
 - Keep trusted progression/scoring decisions in BackendAPI; AI and client are untrusted inputs.
 - Run submitted code in a separate, disposable, resource-bounded worker with no network and no host secrets.
 - Deliver a coherent vertical slice before broad content production; the roadmap preserves the full sixteen-region world.

@@ -1,0 +1,917 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "CodeQuest AI Backend API",
+    "version": "0.1.0",
+    "description": "Versioned CodeQuest AI backend contracts. Learner-owned routes require a valid OIDC bearer token; challenge execution is not provided by this API yet."
+  },
+  "paths": {
+    "/api/v2/quests/{quest_slug}": {
+      "get": {
+        "tags": [
+          "quest-events-v2"
+        ],
+        "summary": "Read Quest Definition",
+        "operationId": "read_quest_definition_api_v2_quests__quest_slug__get",
+        "parameters": [
+          {
+            "name": "quest_slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Quest Slug"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestDefinitionV2Out"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required dependency is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/me/quests/{quest_slug}/events": {
+      "post": {
+        "tags": [
+          "quest-events-v2"
+        ],
+        "summary": "Submit a server-validated quest event",
+        "operationId": "post_quest_event_api_v2_me_quests__quest_slug__events_post",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "quest_slug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Quest Slug"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestEventRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuestEventResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Invalid transition or stale quest revision"
+          },
+          "422": {
+            "description": "Request validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required dependency is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/me/quests": {
+      "get": {
+        "tags": [
+          "quest-events-v2"
+        ],
+        "summary": "Read My Quests",
+        "operationId": "read_my_quests_api_v2_me_quests_get",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Page_QuestProgressV2Out_"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required dependency is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/me/progression": {
+      "get": {
+        "tags": [
+          "quest-events-v2"
+        ],
+        "summary": "Read My Progression",
+        "operationId": "read_my_progression_api_v2_me_progression_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgressionOut"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "State conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Request validation failed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "A required dependency is unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiError": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "retryable": {
+            "type": "boolean",
+            "title": "Retryable",
+            "default": false
+          },
+          "correlationId": {
+            "type": "string",
+            "title": "Correlationid"
+          },
+          "currentState": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currentstate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "correlationId"
+        ],
+        "title": "ApiError"
+      },
+      "Page_QuestProgressV2Out_": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/QuestProgressV2Out"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Offset"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "limit",
+          "offset",
+          "total"
+        ],
+        "title": "Page[QuestProgressV2Out]"
+      },
+      "ProgressionOut": {
+        "properties": {
+          "experience": {
+            "type": "integer",
+            "title": "Experience"
+          },
+          "level": {
+            "type": "integer",
+            "title": "Level"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updatedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "experience",
+          "level",
+          "revision",
+          "updatedAt"
+        ],
+        "title": "ProgressionOut"
+      },
+      "QuestDefinitionV2Out": {
+        "properties": {
+          "slug": {
+            "type": "string",
+            "title": "Slug"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary"
+          },
+          "objectiveRules": {
+            "items": {
+              "$ref": "#/components/schemas/QuestObjectiveRuleOut"
+            },
+            "type": "array",
+            "title": "Objectiverules"
+          },
+          "prerequisiteQuestIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Prerequisitequestids"
+          },
+          "rewards": {
+            "items": {
+              "$ref": "#/components/schemas/QuestRewardRuleOut"
+            },
+            "type": "array",
+            "title": "Rewards"
+          }
+        },
+        "type": "object",
+        "required": [
+          "slug",
+          "version",
+          "title",
+          "summary",
+          "objectiveRules",
+          "prerequisiteQuestIds",
+          "rewards"
+        ],
+        "title": "QuestDefinitionV2Out"
+      },
+      "QuestEventRequest": {
+        "properties": {
+          "eventId": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Eventid"
+          },
+          "questVersion": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Questversion"
+          },
+          "expectedRevision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expectedrevision"
+          },
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "interact",
+              "checkpoint",
+              "challenge_passed",
+              "prerequisite_completed"
+            ],
+            "title": "Eventtype"
+          },
+          "targetId": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Targetid"
+          },
+          "targetVersion": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Targetversion",
+            "default": 1
+          },
+          "challengeSubmissionId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Challengesubmissionid"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "eventId",
+          "questVersion",
+          "expectedRevision",
+          "eventType",
+          "targetId"
+        ],
+        "title": "QuestEventRequest"
+      },
+      "QuestEventResult": {
+        "properties": {
+          "questSlug": {
+            "type": "string",
+            "title": "Questslug"
+          },
+          "questVersion": {
+            "type": "integer",
+            "title": "Questversion"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "locked",
+              "available",
+              "in_progress",
+              "completed",
+              "abandoned"
+            ],
+            "title": "Status"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "objectiveProgress": {
+            "items": {
+              "$ref": "#/components/schemas/QuestObjectiveProgressOut"
+            },
+            "type": "array",
+            "title": "Objectiveprogress"
+          },
+          "newlyGrantedRewards": {
+            "items": {
+              "$ref": "#/components/schemas/QuestEventRewardOut"
+            },
+            "type": "array",
+            "title": "Newlygrantedrewards"
+          },
+          "progression": {
+            "$ref": "#/components/schemas/ProgressionOut"
+          },
+          "replayed": {
+            "type": "boolean",
+            "title": "Replayed",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "questSlug",
+          "questVersion",
+          "status",
+          "revision",
+          "objectiveProgress",
+          "newlyGrantedRewards",
+          "progression"
+        ],
+        "title": "QuestEventResult"
+      },
+      "QuestEventRewardOut": {
+        "properties": {
+          "rewardId": {
+            "type": "string",
+            "title": "Rewardid"
+          },
+          "rewardType": {
+            "type": "string",
+            "const": "experience",
+            "title": "Rewardtype"
+          },
+          "experiencePoints": {
+            "type": "integer",
+            "title": "Experiencepoints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rewardId",
+          "rewardType",
+          "experiencePoints"
+        ],
+        "title": "QuestEventRewardOut"
+      },
+      "QuestObjectiveProgressOut": {
+        "properties": {
+          "objectiveId": {
+            "type": "string",
+            "title": "Objectiveid"
+          },
+          "completedCount": {
+            "type": "integer",
+            "title": "Completedcount"
+          },
+          "requiredCount": {
+            "type": "integer",
+            "title": "Requiredcount"
+          },
+          "completed": {
+            "type": "boolean",
+            "title": "Completed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "objectiveId",
+          "completedCount",
+          "requiredCount",
+          "completed"
+        ],
+        "title": "QuestObjectiveProgressOut"
+      },
+      "QuestObjectiveRuleOut": {
+        "properties": {
+          "objectiveId": {
+            "type": "string",
+            "title": "Objectiveid"
+          },
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "interact",
+              "checkpoint",
+              "challenge_passed",
+              "prerequisite_completed"
+            ],
+            "title": "Eventtype"
+          },
+          "targetId": {
+            "type": "string",
+            "title": "Targetid"
+          },
+          "targetVersion": {
+            "type": "integer",
+            "title": "Targetversion"
+          },
+          "requiredCount": {
+            "type": "integer",
+            "title": "Requiredcount"
+          },
+          "prerequisiteObjectiveIds": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Prerequisiteobjectiveids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "objectiveId",
+          "eventType",
+          "targetId",
+          "targetVersion",
+          "requiredCount",
+          "prerequisiteObjectiveIds"
+        ],
+        "title": "QuestObjectiveRuleOut"
+      },
+      "QuestProgressV2Out": {
+        "properties": {
+          "questSlug": {
+            "type": "string",
+            "title": "Questslug"
+          },
+          "questVersion": {
+            "type": "integer",
+            "title": "Questversion"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "locked",
+              "available",
+              "in_progress",
+              "completed",
+              "abandoned"
+            ],
+            "title": "Status"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "objectiveProgress": {
+            "items": {
+              "$ref": "#/components/schemas/QuestObjectiveProgressOut"
+            },
+            "type": "array",
+            "title": "Objectiveprogress"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Createdat"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updatedat"
+          }
+        },
+        "type": "object",
+        "required": [
+          "questSlug",
+          "questVersion",
+          "status",
+          "revision",
+          "objectiveProgress",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "QuestProgressV2Out"
+      },
+      "QuestRewardRuleOut": {
+        "properties": {
+          "rewardId": {
+            "type": "string",
+            "title": "Rewardid"
+          },
+          "rewardType": {
+            "type": "string",
+            "const": "experience",
+            "title": "Rewardtype"
+          },
+          "experiencePoints": {
+            "type": "integer",
+            "title": "Experiencepoints"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rewardId",
+          "rewardType",
+          "experiencePoints"
+        ],
+        "title": "QuestRewardRuleOut"
+      }
+    },
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}

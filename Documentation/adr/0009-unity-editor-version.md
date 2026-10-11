@@ -12,7 +12,11 @@ Use Unity Editor **6000.3.19f1** for initial project creation and validation. Re
 
 ## Consequences
 
-The actual installed patch is reproducible on this workstation. A teammate must install this exact editor version. Package compatibility still needs verification; package dependencies and lockfile are not yet present.
+The exact installed patch is reproducible on this workstation. A teammate must install this exact editor version. Package compatibility is represented in the Unity manifest and lockfile; runtime compilation still requires a licensed editor invocation.
+
+## Milestone update (2026-10-11)
+
+`GameClient/Packages/manifest.json` and `packages-lock.json` now pin the installed URP, uGUI, and Unity Test Framework dependency graph. The current Milestone 6 batch invocation could not establish a licensing-client connection and produced no compilation result. Do not treat the existing package lock or earlier generated Unity caches as proof that the current C# changes compile.
 
 ## References
 

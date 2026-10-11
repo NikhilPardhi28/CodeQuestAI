@@ -16,6 +16,7 @@ from sqlalchemy import (
     UniqueConstraint,
     Uuid,
     func,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -130,6 +131,114 @@ class QuestDefinition(Base):
     )
 
 
+class QuestEventTarget(Base):
+    __tablename__ = "quest_event_targets"
+    __table_args__ = (
+        CheckConstraint(
+            "event_type IN ('interact', 'checkpoint', 'challenge_passed', "
+            "'prerequisite_completed')",
+            name="ck_quest_event_target_type",
+        ),
+        CheckConstraint("target_version > 0", name="ck_quest_event_target_version_positive"),
+    )
+
+    event_type: Mapped[str] = mapped_column(String(32), primary_key=True)
+    target_id: Mapped[str] = mapped_column(String(120), primary_key=True)
+    target_version: Mapped[int] = mapped_column(Integer, primary_key=True, default=1)
+    is_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class QuestObjectiveRule(Base):
+    __tablename__ = "quest_objective_rules"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["quest_slug", "quest_version"],
+            ["quest_definitions.slug", "quest_definitions.version"],
+            name="fk_quest_objective_rule_definition",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["event_type", "target_id", "target_version"],
+            [
+                "quest_event_targets.event_type",
+                "quest_event_targets.target_id",
+                "quest_event_targets.target_version",
+            ],
+            name="fk_quest_objective_rule_target",
+            ondelete="RESTRICT",
+        ),
+        CheckConstraint("required_count > 0", name="ck_quest_objective_required_positive"),
+        CheckConstraint(
+            "event_type = 'challenge_passed' OR required_count = 1",
+            name="ck_quest_objective_repeat_requires_challenge",
+        ),
+        Index("ix_quest_objective_rule_target", "event_type", "target_id", "target_version"),
+    )
+
+    quest_slug: Mapped[str] = mapped_column(String(100), primary_key=True)
+    quest_version: Mapped[int] = mapped_column(Integer, primary_key=True)
+    objective_id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    event_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    target_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    target_version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    required_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+
+
+class QuestObjectivePrerequisite(Base):
+    __tablename__ = "quest_objective_prerequisites"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["quest_slug", "quest_version", "objective_id"],
+            [
+                "quest_objective_rules.quest_slug",
+                "quest_objective_rules.quest_version",
+                "quest_objective_rules.objective_id",
+            ],
+            name="fk_quest_objective_prerequisite_objective",
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["quest_slug", "quest_version", "prerequisite_objective_id"],
+            [
+                "quest_objective_rules.quest_slug",
+                "quest_objective_rules.quest_version",
+                "quest_objective_rules.objective_id",
+            ],
+            name="fk_quest_objective_prerequisite_required",
+            ondelete="RESTRICT",
+        ),
+        CheckConstraint(
+            "objective_id <> prerequisite_objective_id",
+            name="ck_quest_objective_not_self_prerequisite",
+        ),
+    )
+
+    quest_slug: Mapped[str] = mapped_column(String(100), primary_key=True)
+    quest_version: Mapped[int] = mapped_column(Integer, primary_key=True)
+    objective_id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    prerequisite_objective_id: Mapped[str] = mapped_column(String(100), primary_key=True)
+
+
+class QuestRewardRule(Base):
+    __tablename__ = "quest_reward_rules"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["quest_slug", "quest_version"],
+            ["quest_definitions.slug", "quest_definitions.version"],
+            name="fk_quest_reward_rule_definition",
+            ondelete="RESTRICT",
+        ),
+        CheckConstraint("reward_type = 'experience'", name="ck_quest_reward_type_supported"),
+        CheckConstraint("experience_points > 0", name="ck_quest_reward_experience_positive"),
+    )
+
+    quest_slug: Mapped[str] = mapped_column(String(100), primary_key=True)
+    quest_version: Mapped[int] = mapped_column(Integer, primary_key=True)
+    reward_id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    reward_type: Mapped[str] = mapped_column(String(24), nullable=False, default="experience")
+    experience_points: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
 class PlayerQuestProgress(Base):
     __tablename__ = "player_quest_progress"
     __table_args__ = (
@@ -150,14 +259,130 @@ class PlayerQuestProgress(Base):
             name="ck_quest_progress_status",
         ),
         Index("ix_quest_progress_player_updated", "player_profile_id", "updated_at"),
+        CheckConstraint("revision >= 0", name="ck_quest_progress_revision_nonnegative"),
     )
 
     player_profile_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True)
     quest_slug: Mapped[str] = mapped_column(String(100), primary_key=True)
     quest_version: Mapped[int] = mapped_column(Integer, primary_key=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="available")
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     state: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
     created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
+    )
+
+
+class PlayerQuestEvent(Base):
+    __tablename__ = "player_quest_events"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["player_profile_id"],
+            ["player_profiles.id"],
+            name="fk_quest_event_player",
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["quest_slug", "quest_version"],
+            ["quest_definitions.slug", "quest_definitions.version"],
+            name="fk_quest_event_definition",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["event_type", "target_id", "target_version"],
+            [
+                "quest_event_targets.event_type",
+                "quest_event_targets.target_id",
+                "quest_event_targets.target_version",
+            ],
+            name="fk_quest_event_target",
+            ondelete="RESTRICT",
+        ),
+        ForeignKeyConstraint(
+            ["evidence_submission_id"],
+            ["submission_records.id"],
+            name="fk_quest_event_submission",
+            ondelete="SET NULL",
+        ),
+        UniqueConstraint("player_profile_id", "event_id", name="uq_player_quest_event_idempotency"),
+        CheckConstraint("length(payload_hash) = 64", name="ck_quest_event_payload_hash_length"),
+        Index(
+            "ix_player_quest_events_quest_created",
+            "player_profile_id",
+            "quest_slug",
+            "quest_version",
+            "created_at",
+        ),
+        Index(
+            "uq_player_quest_submission_evidence",
+            "player_profile_id",
+            "quest_slug",
+            "quest_version",
+            "evidence_submission_id",
+            unique=True,
+            postgresql_where=text("evidence_submission_id IS NOT NULL"),
+            sqlite_where=text("evidence_submission_id IS NOT NULL"),
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    player_profile_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
+    event_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
+    payload_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    quest_slug: Mapped[str] = mapped_column(String(100), nullable=False)
+    quest_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    event_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    target_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    target_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    evidence_submission_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid(as_uuid=True), nullable=True
+    )
+    response: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+
+class PlayerQuestRewardLedger(Base):
+    __tablename__ = "player_quest_reward_ledger"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["player_profile_id"],
+            ["player_profiles.id"],
+            name="fk_quest_reward_player",
+            ondelete="CASCADE",
+        ),
+        ForeignKeyConstraint(
+            ["quest_slug", "quest_version", "reward_id"],
+            [
+                "quest_reward_rules.quest_slug",
+                "quest_reward_rules.quest_version",
+                "quest_reward_rules.reward_id",
+            ],
+            name="fk_quest_reward_ledger_rule",
+            ondelete="RESTRICT",
+        ),
+        UniqueConstraint(
+            "player_profile_id",
+            "quest_slug",
+            "quest_version",
+            "reward_id",
+            name="uq_player_quest_reward_once",
+        ),
+        CheckConstraint("experience_points > 0", name="ck_quest_reward_ledger_experience_positive"),
+        Index("ix_player_quest_rewards_player_date", "player_profile_id", "granted_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    player_profile_id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
+    quest_slug: Mapped[str] = mapped_column(String(100), nullable=False)
+    quest_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    reward_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    experience_points: Mapped[int] = mapped_column(Integer, nullable=False)
+    granted_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     updated_at: Mapped[datetime] = mapped_column(

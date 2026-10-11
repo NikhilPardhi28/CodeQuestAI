@@ -14,6 +14,10 @@ from BackendAPI.app.db.models import (
     CurriculumRegion,
     LearningObjective,
     QuestDefinition,
+    QuestEventTarget,
+    QuestObjectivePrerequisite,
+    QuestObjectiveRule,
+    QuestRewardRule,
 )
 from BackendAPI.app.db.session import SessionLocal
 
@@ -27,7 +31,14 @@ def _insert_if_missing(session: Session, model: type, key: tuple[Any, ...], **va
 
 
 def seed_development(session: Session) -> dict[str, int]:
-    counts = {"regions": 0, "objectives": 0, "quests": 0, "challenges": 0, "achievements": 0}
+    counts = {
+        "regions": 0,
+        "objectives": 0,
+        "quests": 0,
+        "challenges": 0,
+        "achievements": 0,
+        "questRules": 0,
+    }
     regions = [
         {
             "slug": "variable-vale",
@@ -208,6 +219,80 @@ def seed_development(session: Session) -> dict[str, int]:
         counts["challenges"] += _insert_if_missing(
             session, CodingChallengeDefinition, (slug, 1), **values
         )
+
+    targets = [
+        ("interact", "relay-switch", 1),
+        ("checkpoint", "signal-platform", 1),
+        ("challenge_passed", "signal-coordinate", 1),
+        ("prerequisite_completed", "light-the-signal", 1),
+        ("challenge_passed", "foundry-output", 1),
+        ("interact", "crossing-console", 1),
+        ("checkpoint", "trail-crossing", 1),
+    ]
+    for event_type, target_id, target_version in targets:
+        counts["questRules"] += _insert_if_missing(
+            session,
+            QuestEventTarget,
+            (event_type, target_id, target_version),
+            event_type=event_type,
+            target_id=target_id,
+            target_version=target_version,
+            is_enabled=True,
+        )
+
+    rules = [
+        ("light-the-signal", "activate-relay", "interact", "relay-switch"),
+        ("light-the-signal", "reach-platform", "checkpoint", "signal-platform"),
+        ("light-the-signal", "pass-signal-challenge", "challenge_passed", "signal-coordinate"),
+        (
+            "balance-the-foundry",
+            "complete-signal-prerequisite",
+            "prerequisite_completed",
+            "light-the-signal",
+        ),
+        ("balance-the-foundry", "pass-foundry-challenge", "challenge_passed", "foundry-output"),
+        ("choose-the-crossing", "inspect-crossing", "interact", "crossing-console"),
+        ("choose-the-crossing", "reach-crossing", "checkpoint", "trail-crossing"),
+    ]
+    for quest_slug, objective_id, event_type, target_id in rules:
+        counts["questRules"] += _insert_if_missing(
+            session,
+            QuestObjectiveRule,
+            (quest_slug, 1, objective_id),
+            quest_slug=quest_slug,
+            quest_version=1,
+            objective_id=objective_id,
+            event_type=event_type,
+            target_id=target_id,
+            target_version=1,
+            required_count=1,
+        )
+    prerequisites = [
+        ("light-the-signal", "reach-platform", "activate-relay"),
+        ("light-the-signal", "pass-signal-challenge", "reach-platform"),
+        ("balance-the-foundry", "pass-foundry-challenge", "complete-signal-prerequisite"),
+        ("choose-the-crossing", "reach-crossing", "inspect-crossing"),
+    ]
+    for quest_slug, objective_id, required_id in prerequisites:
+        counts["questRules"] += _insert_if_missing(
+            session,
+            QuestObjectivePrerequisite,
+            (quest_slug, 1, objective_id, required_id),
+            quest_slug=quest_slug,
+            quest_version=1,
+            objective_id=objective_id,
+            prerequisite_objective_id=required_id,
+        )
+    counts["questRules"] += _insert_if_missing(
+        session,
+        QuestRewardRule,
+        ("light-the-signal", 1, "signal-experience"),
+        quest_slug="light-the-signal",
+        quest_version=1,
+        reward_id="signal-experience",
+        reward_type="experience",
+        experience_points=25,
+    )
 
     achievements = [
         (

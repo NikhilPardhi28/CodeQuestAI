@@ -1,8 +1,8 @@
 # Core systems and Unity client architecture
 
-**Status:** proposed design. Assembly names and boundaries are architectural targets, not existing code. Initial target is Windows 10/11 x64 and installed Unity 6000.3.19f1 per [ADRs 0008–0009](adr/0008-initial-platforms.md); no Unity project or package manifest exists yet.
+**Status:** broader system specifications are proposed; Unity 6 runtime assemblies and API adapters now exist. The initial platform and editor version remain Windows 10/11 x64 and Unity 6000.3.19f1 per [ADRs 0008–0009](adr/0008-initial-platforms.md).
 
-The backend has an initial implementation, and the Unity repository now contains its first runtime/API client foundation. The API and tables cover catalog reads, profile initialization, and caller-owned progress/award/submission metadata reads. The Unity greybox runtime provides movement, camera, input and interaction boundaries plus a typed catalog/profile client; editor package resolution and compilation remain pending license activation. Execution, scoring, quest completion mutation, and dashboards are not implemented; see the [v1 route inventory](api/README.md) and [Unity setup](../GameClient/README.md).
+The backend includes v1 catalog/profile reads and additive v2 server-authoritative quest events, objective progress, and XP reward persistence. The Unity greybox runtime provides movement, camera, input, interaction, dialogue, and quest event boundaries plus typed API clients. The current batch invocation could not connect to the Unity licensing client, so current compilation and Test Runner results remain unverified. Challenge submission/evaluation and dashboards are not implemented; see the [versioned API inventory](api/README.md) and [Unity setup](../GameClient/README.md).
 
 ## 1. System context
 
@@ -71,7 +71,7 @@ GameClient/
 
 Proposed asmdefs: `CQ.Foundation`; `CQ.Content`; `CQ.Gameplay.Player`; `CQ.Gameplay.World`; `CQ.Gameplay.Quests`; `CQ.Gameplay.Challenges`; `CQ.Gameplay.Combat`; `CQ.Gameplay.Progression`; `CQ.UI`; `CQ.Infrastructure`; matching test assemblies. Dependencies point inward to Foundation/contracts. UI depends on use-case interfaces rather than concrete networking. Editor-only validators live in `Assets/CodeQuest/Editor/` and editor asmdefs, never in runtime assemblies. Exact directory placement must be verified against selected Unity packages.
 
-Unity conventions: record `6000.3.19f1` in `ProjectSettings/ProjectVersion.txt` when scaffolding; commit `Packages/manifest.json` and Package Manager lockfile; use only package versions offered/compatible in that editor. Do not auto-upgrade the editor or select versions based on a floating latest tag. One public MonoBehaviour/ScriptableObject per matching file, `CodeQuest.<Area>` namespaces, explicit asmdef references, and no `UnityEditor` reference from runtime assemblies. See [ADR-0009](adr/0009-unity-editor-version.md).
+Unity conventions: the project records `6000.3.19f1` in `ProjectSettings/ProjectVersion.txt` and commits its manifest and lockfile; use only package versions compatible with that editor. Do not auto-upgrade the editor or select versions based on a floating latest tag. One public MonoBehaviour/ScriptableObject per matching file, `CodeQuest.<Area>` namespaces, explicit asmdef references, and no `UnityEditor` reference from runtime assemblies. See [ADR-0009](adr/0009-unity-editor-version.md).
 
 ### Client state ownership
 
@@ -79,6 +79,7 @@ Unity conventions: record `6000.3.19f1` in `ProjectSettings/ProjectVersion.txt` 
 - Backend owns identity, challenge outcomes, hidden-test verdict, curriculum completion, inventory, economy, account save, teacher assignment, and analytics access policy.
 - AI owns no persistent gameplay state or scoring. Its response is advice only.
 - Content authoring assets may define visible challenge data; hidden tests and reward rules are not included in downloadable Unity assets.
+- Quest objectives and rewards are authoritative in the backend. Unity keeps event intents pending/failed until v2 confirms the server snapshot; its bounded offline queue is in memory only. See [ADR-0012](adr/0012-authoritative-quest-event-ledger.md).
 
 ## 4. Replaceable interfaces
 

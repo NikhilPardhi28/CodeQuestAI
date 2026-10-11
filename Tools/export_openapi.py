@@ -7,35 +7,55 @@ import json
 import sys
 from pathlib import Path
 
+from fastapi.openapi.utils import get_openapi
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from BackendAPI.app.main import app  # noqa: E402
 
-SPEC_PATH = ROOT / "Documentation" / "api" / "openapi-v1.json"
+SPEC_PATHS = {
+    "v1": ROOT / "Documentation" / "api" / "openapi-v1.json",
+    "v2": ROOT / "Documentation" / "api" / "openapi-v2.json",
+}
 
 
-def render_openapi() -> str:
-    return json.dumps(app.openapi(), indent=2, ensure_ascii=False) + "\n"
+def render_openapi(version: str) -> str:
+    prefix = f"/api/{version}"
+    routes = [
+        route
+        for route in app.routes
+        if getattr(route, "path", "").startswith(prefix)
+        or (version == "v1" and getattr(route, "path", "") in {"/healthz", "/readyz"})
+    ]
+    document = get_openapi(title=app.title, version=app.version, routes=routes)
+    document["info"]["description"] = app.description
+    return json.dumps(document, indent=2, ensure_ascii=False) + "\n"
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true", help="fail if the checked-in spec is stale")
     args = parser.parse_args()
-    generated = render_openapi()
+    generated = {version: render_openapi(version) for version in SPEC_PATHS}
     if args.check:
-        if not SPEC_PATH.exists() or SPEC_PATH.read_text(encoding="utf-8") != generated:
+        stale = [
+            path
+            for version, path in SPEC_PATHS.items()
+            if not path.exists() or path.read_text(encoding="utf-8") != generated[version]
+        ]
+        if stale:
             print(
-                "OpenAPI document is missing or stale; run python Tools/export_openapi.py",
+                "OpenAPI document(s) missing or stale; run python Tools/export_openapi.py",
                 file=sys.stderr,
             )
             return 1
-        print(f"OpenAPI document matches {SPEC_PATH.relative_to(ROOT)}")
-        return 0
-    SPEC_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SPEC_PATH.write_text(generated, encoding="utf-8", newline="\n")
-    print(f"Wrote {SPEC_PATH.relative_to(ROOT)}")
+        print("OpenAPI v1 and v2 documents match the running routes")
+    else:
+        for version, path in SPEC_PATHS.items():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(generated[version], encoding="utf-8", newline="\n")
+            print(f"Wrote {path.relative_to(ROOT)}")
     return 0
 
 

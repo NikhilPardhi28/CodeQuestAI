@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "CodeQuest AI Backend API",
-    "description": "Versioned CodeQuest AI backend contracts. Learner-owned routes require a valid OIDC bearer token; challenge execution is not provided by this API yet.",
-    "version": "0.1.0"
+    "version": "0.1.0",
+    "description": "Versioned CodeQuest AI backend contracts. Learner-owned routes require a valid OIDC bearer token; challenge execution is not provided by this API yet."
   },
   "paths": {
     "/healthz": {
@@ -1823,6 +1823,18 @@
           "correlationId": {
             "type": "string",
             "title": "Correlationid"
+          },
+          "currentState": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currentstate"
           }
         },
         "type": "object",

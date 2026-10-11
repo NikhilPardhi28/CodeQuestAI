@@ -12,7 +12,7 @@ from BackendAPI.app.db.seed import seed_development
 from BackendAPI.app.db.session import build_engine
 from BackendAPI.app.schemas import QuestEventRequest
 from BackendAPI.app.services.quest_events import QuestEventError, submit_quest_event
-from sqlalchemy import inspect
+from BackendAPI.tests.postgres_support import reset_empty_postgres_migration_state
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import sessionmaker
 
@@ -38,8 +38,7 @@ def test_postgres_serializes_concurrent_quest_revisions():
         pytest.fail("PostgreSQL concurrency tests require the isolated codequest_test database")
 
     engine = build_engine(database_url)
-    if set(inspect(engine).get_table_names()) - {"alembic_version"}:
-        pytest.fail("codequest_test must be empty before the PostgreSQL concurrency test")
+    reset_empty_postgres_migration_state(engine)
     config = _config(database_url)
     command.upgrade(config, "head")
     try:

@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 from alembic import command
 from alembic.config import Config
+from BackendAPI.tests.postgres_support import reset_empty_postgres_migration_state
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.engine import make_url
 
@@ -71,13 +72,8 @@ def test_postgres_migration_round_trip_when_configured() -> None:
         )
 
     engine = create_engine(database_url)
-    with engine.connect() as connection:
-        existing = set(inspect(connection).get_table_names()) - {"alembic_version"}
+    reset_empty_postgres_migration_state(engine)
     engine.dispose()
-    if existing:
-        pytest.fail(
-            f"codequest_test must be empty before running migrations; found {sorted(existing)}"
-        )
 
     config = _alembic_config(database_url)
     command.upgrade(config, "head")

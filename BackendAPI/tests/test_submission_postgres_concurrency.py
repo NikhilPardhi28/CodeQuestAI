@@ -24,7 +24,8 @@ from BackendAPI.app.schemas import (
     WorkerEvaluationResponse,
 )
 from BackendAPI.app.services.submissions import apply_worker_result, create_submission
-from sqlalchemy import func, inspect, select
+from BackendAPI.tests.postgres_support import reset_empty_postgres_migration_state
+from sqlalchemy import func, select
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import sessionmaker
 
@@ -41,8 +42,7 @@ def test_postgres_submission_idempotency_and_duplicate_pass_are_serialized():
         pytest.fail("PostgreSQL submission tests require the isolated codequest_test database")
 
     engine = build_engine(database_url)
-    if set(inspect(engine).get_table_names()) - {"alembic_version"}:
-        pytest.fail("codequest_test must be empty before PostgreSQL concurrency tests")
+    reset_empty_postgres_migration_state(engine)
     config = Config(str(ROOT / "alembic.ini"))
     config.set_main_option("script_location", str(ROOT / "Database" / "migrations"))
     config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))

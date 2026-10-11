@@ -4,12 +4,16 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import uuid
+from hashlib import sha256
+from keyword import iskeyword
 
 MAX_SOURCE_BYTES = 32 * 1024
 MAX_JOB_BYTES = 96 * 1024
 MAX_DIAGNOSTIC_BYTES = 64 * 1024
+IMAGE_DIGEST = re.compile(r"^.+@sha256:[0-9a-f]{64}$")
 
 
 class EvaluationUnavailable(RuntimeError):
@@ -37,6 +41,25 @@ def validate_job(job: object) -> dict[str, object]:
         or len(source.encode("utf-8")) > MAX_SOURCE_BYTES
     ):
         raise ValueError("source outside limits")
+    if (
+        not isinstance(job["sourceDigest"], str)
+        or job["sourceDigest"] != sha256(source.encode("utf-8")).hexdigest()
+    ):
+        raise ValueError("source digest mismatch")
+    try:
+        uuid.UUID(str(job["submissionId"]))
+    except (TypeError, ValueError) as exc:
+        raise ValueError("invalid submission id") from exc
+    if (
+        not isinstance(job["challengeSlug"], str)
+        or not job["challengeSlug"]
+        or not isinstance(job["challengeVersion"], int)
+        or isinstance(job["challengeVersion"], bool)
+        or job["challengeVersion"] < 1
+        or not isinstance(job["evaluatorVersion"], str)
+        or not job["evaluatorVersion"]
+    ):
+        raise ValueError("invalid challenge identity")
     definition = job["definition"]
     if not isinstance(definition, dict) or set(definition) != {
         "mode",
@@ -47,10 +70,25 @@ def validate_job(job: object) -> dict[str, object]:
         "outputLimitBytes",
     }:
         raise ValueError("invalid challenge definition")
-    if definition["mode"] != "function" or not isinstance(definition["functionName"], str):
+    function_name = definition["functionName"]
+    if (
+        definition["mode"] != "function"
+        or not isinstance(function_name, str)
+        or not function_name.isidentifier()
+        or iskeyword(function_name)
+    ):
         raise ValueError("unsupported challenge mode")
-    tests = definition["visibleTests"] + definition["hiddenTests"]
-    if not isinstance(tests, list) or not 1 <= len(tests) <= 100:
+    visible_tests = definition["visibleTests"]
+    hidden_tests = definition["hiddenTests"]
+    if (
+        not isinstance(visible_tests, list)
+        or not isinstance(hidden_tests, list)
+        or not visible_tests
+        or not hidden_tests
+    ):
+        raise ValueError("visible and hidden tests are required")
+    tests = visible_tests + hidden_tests
+    if not 1 <= len(tests) <= 100:
         raise ValueError("test count outside limits")
     for test in tests:
         if (
@@ -59,9 +97,17 @@ def validate_job(job: object) -> dict[str, object]:
             or not isinstance(test["input"], list)
         ):
             raise ValueError("invalid test definition")
-    if not 100 <= int(definition["timeLimitMs"]) <= 5000:
+    if (
+        not isinstance(definition["timeLimitMs"], int)
+        or isinstance(definition["timeLimitMs"], bool)
+        or not 100 <= definition["timeLimitMs"] <= 5000
+    ):
         raise ValueError("invalid time limit")
-    if not 1024 <= int(definition["outputLimitBytes"]) <= MAX_DIAGNOSTIC_BYTES:
+    if (
+        not isinstance(definition["outputLimitBytes"], int)
+        or isinstance(definition["outputLimitBytes"], bool)
+        or not 1024 <= definition["outputLimitBytes"] <= MAX_DIAGNOSTIC_BYTES
+    ):
         raise ValueError("invalid output limit")
     if len(json.dumps(job, separators=(",", ":")).encode()) > MAX_JOB_BYTES:
         raise ValueError("job exceeds byte limit")
@@ -85,7 +131,7 @@ def _kill_container(name: str) -> None:
 def run_isolated_job(raw_job: object) -> dict[str, object]:
     job = validate_job(raw_job)
     image = os.environ.get("CODEQUEST_EVALUATOR_IMAGE", "")
-    if "@sha256:" not in image:
+    if not IMAGE_DIGEST.fullmatch(image):
         raise EvaluationUnavailable("an immutable evaluator image digest is required")
     definition = job["definition"]
     name = "cq-eval-" + uuid.uuid4().hex[:20]

@@ -365,7 +365,14 @@ namespace CodeQuest.UI
                     return;
                 }
                 _challengeFeedback.text = "Evaluation status: " + status + "…";
-                await Task.Delay(750, token);
+                try
+                {
+                    await Task.Delay(750, token);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
             }
             _challengeFeedback.text = "Evaluation is still pending. Use Submit Python to safely check the same request again.";
         }

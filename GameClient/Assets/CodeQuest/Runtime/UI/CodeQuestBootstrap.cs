@@ -62,7 +62,6 @@ namespace CodeQuest.UI
             var quest = ScriptableObject.CreateInstance<QuestDefinition>();
             quest.questId = "light-the-signal";
             quest.version = 2;
-            quest.version = 1;
             quest.category = QuestCategory.Main;
             quest.title = "The Signal Keeper";
             quest.summary = "Activate the registered relay and complete the server-authored signal objectives.";

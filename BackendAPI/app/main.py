@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
+from contextlib import asynccontextmanager
 from time import perf_counter
 from uuid import UUID, uuid4
 
@@ -13,9 +15,11 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from BackendAPI.app.api.health import router as health_router
 from BackendAPI.app.api.router import api_v1, api_v2
+from BackendAPI.app.config import get_settings
+from BackendAPI.app.db.session import SessionLocal
 from BackendAPI.app.schemas import ApiError
 from BackendAPI.app.services.quest_events import QuestEventError
-from BackendAPI.app.services.submissions import SubmissionError
+from BackendAPI.app.services.submissions import SubmissionError, expire_submission_sources
 
 logger = logging.getLogger("codequest.api")
 ERROR_RESPONSES = {
@@ -32,7 +36,49 @@ ERROR_RESPONSES = {
 }
 
 
+def _expire_sources_once() -> int:
+    with SessionLocal() as session:
+        return expire_submission_sources(
+            session, retention_days=get_settings().submission_source_retention_days
+        )
+
+
+async def _submission_source_retention_loop() -> None:
+    while True:
+        await asyncio.sleep(3600)
+        try:
+            expired = await asyncio.to_thread(_expire_sources_once)
+            if expired:
+                logger.info(
+                    json.dumps(
+                        {"event": "submission_sources_expired", "count": expired},
+                        separators=(",", ":"),
+                    )
+                )
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            logger.error(
+                json.dumps(
+                    {
+                        "event": "submission_source_expiry_failed",
+                        "errorType": type(exc).__name__,
+                    },
+                    separators=(",", ":"),
+                )
+            )
+
+
 def create_app() -> FastAPI:
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI):
+        retention_task = asyncio.create_task(_submission_source_retention_loop())
+        try:
+            yield
+        finally:
+            retention_task.cancel()
+            await asyncio.gather(retention_task, return_exceptions=True)
+
     app = FastAPI(
         title="CodeQuest AI Backend API",
         version="0.1.0",
@@ -44,6 +90,7 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
         responses=ERROR_RESPONSES,
+        lifespan=lifespan,
     )
     app.include_router(health_router)
     app.include_router(api_v1)

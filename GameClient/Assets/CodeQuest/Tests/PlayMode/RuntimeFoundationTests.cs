@@ -116,7 +116,11 @@ namespace CodeQuest.Tests.PlayMode
             var catalogRequest = api.GetRegionsAsync(CancellationToken.None);
             while (!catalogRequest.IsCompleted) yield return null;
             var catalog = catalogRequest.Result;
-            Assert.IsTrue(catalog.IsSuccess, catalog.Error == null ? "Catalog request failed." : catalog.Error.message);
+            Assert.IsTrue(
+                catalog.IsSuccess,
+                catalog.Error == null
+                    ? "Catalog request failed."
+                    : $"Catalog request failed ({catalog.Error.code}, HTTP {catalog.StatusCode}): {catalog.Error.message}");
             Assert.Greater(catalog.Value.total, 0);
 
             var profileRequest = api.GetMyProfileAsync(CancellationToken.None);

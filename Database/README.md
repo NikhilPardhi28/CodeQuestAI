@@ -27,7 +27,7 @@ PostgreSQL is the persistence target. Schema changes are authored as immutable A
    ```
 
 The named volume persists data after `down`. Removing that volume deletes local database data; do so only when you intend to reset the disposable development database.
-Challenge source is persisted for delivery to the separately configured worker. Automatic source retention/deletion policy remains unresolved.
+Challenge source is persisted for delivery to the separately configured worker and removed from terminal submission rows after `CODEQUEST_SUBMISSION_SOURCE_RETENTION_DAYS` (default 30 days). The API process runs an hourly cleanup task. The source digest and request hash remain for audit/idempotency; backup and transaction-log retention is controlled separately by the database operator.
 
 ## Migration policy
 

@@ -27,7 +27,7 @@ Limits are enforced at the HTTP/job schema and container/process layers. The cur
 
 ## Privacy, retries, and UI state
 
-Submission source is stored to support delivery/retry and currently has no automatic expiry. Access is restricted to the owning profile at API reads; hidden test definitions and raw worker output are not returned to learners. Source-retention duration, operational logging policy, worker host choice, quotas, allowed packages, and security review ownership remain open decisions.
+Submission source is stored to support delivery/retry and removed from terminal submission rows after the configured retention period (default 30 days). The cleanup task runs hourly; idempotency hashes remain so retries stay stable. Database backups and transaction logs have a separate operator-controlled retention lifecycle. Access is restricted to the owning profile at API reads; hidden test definitions and raw worker output are not returned to learners. Operational logging policy, worker host choice, quotas, allowed packages, and security review ownership remain open decisions.
 
 Unity reuses a client submission UUID when retrying the same source and creates a new key when the source changes. It polls the caller-owned submission record. Only a backend `passed` result is treated as confirmed progress; queued/running states remain pending, and terminal failure/timeout/internal errors do not award client-side rewards. A retry after a request timeout may replay the original record. Protected calls require a real configured OIDC token; no fake credentials or local auth bypass is provided.
 
@@ -39,4 +39,4 @@ SQLite service and migration tests cover schema behavior, ownership, idempotency
 
 ## Next milestone
 
-Review the execution host and sandbox boundary, define source retention and evaluator runtime policy, validate with adversarial tests on the supported Linux runtime, and run PostgreSQL concurrency tests. Then complete Unity Editor verification and end-to-end authenticated API integration before expanding challenge content or adding gameplay features.
+Review the execution host and sandbox boundary, define evaluator runtime policy, validate with adversarial tests on the supported Linux runtime, and run PostgreSQL concurrency tests. Then complete Unity Editor verification and end-to-end authenticated API integration before expanding challenge content or adding gameplay features.

@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     evaluation_worker_url: str | None = None
     evaluation_worker_token: SecretStr | None = None
     evaluation_queue_limit: int = 500
+    submission_source_retention_days: int = 30
 
     @model_validator(mode="after")
     def validate_auth_configuration(self) -> "Settings":
@@ -63,6 +64,13 @@ class Settings(BaseSettings):
                 )
         if self.evaluation_queue_limit < 1 or self.evaluation_queue_limit > 5000:
             raise ValueError("CODEQUEST_EVALUATION_QUEUE_LIMIT must be between 1 and 5000")
+        if (
+            self.submission_source_retention_days < 1
+            or self.submission_source_retention_days > 3650
+        ):
+            raise ValueError(
+                "CODEQUEST_SUBMISSION_SOURCE_RETENTION_DAYS must be between 1 and 3650"
+            )
         return self
 
     @property

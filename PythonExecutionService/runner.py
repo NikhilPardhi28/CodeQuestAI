@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import json
+import os
+import signal
 import subprocess
 import sys
+import tempfile
 import time
 
 CHILD = r"""import json, sys
@@ -19,6 +22,19 @@ except SyntaxError:
 except Exception:
     print(json.dumps({"diagnostic": "runtime_error"}))
 """
+
+
+def _set_child_file_size_limit(max_bytes: int) -> None:
+    import resource
+
+    resource.setrlimit(resource.RLIMIT_FSIZE, (max_bytes, max_bytes))
+
+
+def _kill_process_tree(process: subprocess.Popen[bytes]) -> None:
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except (AttributeError, OSError):
+        process.kill()
 
 
 def main() -> int:
@@ -53,43 +69,72 @@ def main() -> int:
                 "input": test["input"],
             }
             try:
-                completed = subprocess.run(
-                    [sys.executable, "-I", "-S", "-c", CHILD],
-                    input=json.dumps(payload, separators=(",", ":")).encode(),
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.DEVNULL,
-                    timeout=remaining,
-                    check=False,
-                    env={"PATH": "/usr/local/bin:/usr/bin:/bin", "PYTHONIOENCODING": "utf-8"},
-                )
-                if len(completed.stdout) > limit:
-                    outcome = {"passed": False, "diagnosticCode": "output_limit", "message": ""}
-                elif completed.returncode != 0:
-                    outcome = {"passed": False, "diagnosticCode": "runtime_error", "message": ""}
-                else:
-                    returned = json.loads(completed.stdout)
-                    if returned.get("diagnostic"):
+                with tempfile.TemporaryFile() as output:
+                    process = subprocess.Popen(
+                        [sys.executable, "-I", "-S", "-c", CHILD],
+                        stdin=subprocess.PIPE,
+                        stdout=output,
+                        stderr=output,
+                        start_new_session=True,
+                        preexec_fn=lambda: _set_child_file_size_limit(limit + 1),
+                        env={"PATH": "/usr/local/bin:/usr/bin:/bin", "PYTHONIOENCODING": "utf-8"},
+                    )
+                    try:
+                        process.communicate(
+                            input=json.dumps(payload, separators=(",", ":")).encode(),
+                            timeout=remaining,
+                        )
+                    except subprocess.TimeoutExpired:
+                        _kill_process_tree(process)
+                        process.communicate()
+                        result["timedOut"] = True
                         outcome = {
                             "passed": False,
-                            "diagnosticCode": returned["diagnostic"],
+                            "diagnosticCode": "timeout",
+                            "message": "",
+                        }
+                        if is_hidden:
+                            result["hiddenPassed"] += 0
+                        else:
+                            result["visibleResults"].append(outcome)
+                        continue
+                    output.seek(0, os.SEEK_END)
+                    output_size = output.tell()
+                    if output_size > limit:
+                        outcome = {"passed": False, "diagnosticCode": "output_limit", "message": ""}
+                    elif process.returncode != 0:
+                        outcome = {
+                            "passed": False,
+                            "diagnosticCode": "runtime_error",
                             "message": "",
                         }
                     else:
-                        passed = returned.get("value") == test["expected"]
-                        outcome = {
-                            "passed": passed,
-                            "diagnosticCode": None if passed else "wrong_answer",
-                            "message": "",
-                        }
-            except subprocess.TimeoutExpired:
-                result["timedOut"] = True
-                outcome = {"passed": False, "diagnosticCode": "timeout", "message": ""}
+                        output.seek(0)
+                        raw_output = output.read(limit + 1)
+                        returned = json.loads(raw_output)
+                        if returned.get("diagnostic"):
+                            outcome = {
+                                "passed": False,
+                                "diagnosticCode": returned["diagnostic"],
+                                "message": "",
+                            }
+                        else:
+                            passed = returned.get("value") == test["expected"]
+                            outcome = {
+                                "passed": passed,
+                                "diagnosticCode": None if passed else "wrong_answer",
+                                "message": "",
+                            }
+                if is_hidden:
+                    result["hiddenPassed"] += int(outcome["passed"])
+                else:
+                    result["visibleResults"].append(outcome)
             except (ValueError, TypeError):
                 outcome = {"passed": False, "diagnosticCode": "runtime_error", "message": ""}
-            if is_hidden:
-                result["hiddenPassed"] += int(outcome["passed"])
-            else:
-                result["visibleResults"].append(outcome)
+                if is_hidden:
+                    result["hiddenPassed"] += 0
+                else:
+                    result["visibleResults"].append(outcome)
     sys.stdout.write(json.dumps(result, separators=(",", ":")))
     return 0
 

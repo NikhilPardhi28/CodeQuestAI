@@ -16,7 +16,7 @@ The initial worker implementation is a separate standard-library HTTP service an
 
 ## Consequences
 
-This permits real Python only when the isolated worker runtime is configured and healthy. The initial worker supports function-style JSON input/output cases; standard-input challenges and additional package profiles remain unsupported. Source is currently retained in submission rows without automatic expiry. Worker responses are untrusted and checked against stored submission identity, challenge version, evaluator version, and test counts before backend scoring. No worker connection, isolated execution, or reward integration has been verified in this environment. The worker has no database credentials and cannot modify progression directly.
+This permits real Python only when the isolated worker runtime is configured and healthy. The initial worker supports function-style JSON input/output cases; standard-input challenges and additional package profiles remain unsupported. Source code is removed from terminal submission rows after `CODEQUEST_SUBMISSION_SOURCE_RETENTION_DAYS` (default 30 days) by an hourly cleanup task; queued/running work is retained until terminal. Digests, idempotency hashes, and result metadata remain, and backups need a separate retention policy. Worker responses are untrusted and checked against stored submission identity, challenge version, evaluator version, and test counts before backend scoring. No worker connection, isolated execution, or reward integration has been verified in this environment. The worker has no database credentials and cannot modify progression directly.
 
 ## Threat model and controls
 
@@ -25,7 +25,7 @@ This permits real Python only when the isolated worker runtime is configured and
 | Filesystem read/write outside job | no host mounts; read-only root; private ephemeral workspace; non-root UID; destroy workspace |
 | Network access/exfiltration | isolated network namespace/no route; outbound and DNS denial verified by adversarial tests |
 | CPU/memory/process exhaustion | cgroup quotas, wall deadline, pids limit, bounded queue, kill process tree |
-| Output flood or hidden-test disclosure | strict byte cap, truncate safely, never return hidden tests/expected values |
+| Output flood or hidden-test disclosure | file-size-limited evaluator output, container memory/time limits, never return hidden tests/expected values |
 | Kernel/container escape | patched pinned runtime/host, dropped capabilities, seccomp/MAC policy, no secrets, separate worker host boundary; residual risk remains |
 | Cross-job contamination | one fresh container/workspace per job; destroy and verify cleanup |
 | Malicious job protocol | schema and size validation, authenticated internal channel, attempt binding, signed/correlated results |
@@ -37,7 +37,7 @@ This permits real Python only when the isolated worker runtime is configured and
 1. Production host OS and supported isolation runtime, including whether container-only isolation meets risk tolerance. The initial worker launcher has not received adversarial review.
 2. Queue and concurrency quotas per account/class and total host capacity.
 3. Exact permitted modules and separate standard-library/NumPy/Pandas image profiles.
-4. Challenge/source retention and diagnostic logging policy. Student source currently has no automatic expiry.
+4. Database backup/transaction-log retention and source erasure timing outside active submission rows.
 5. Adversarial test ownership, security review cadence, patch SLA, and incident response.
 
 ## References

@@ -7,7 +7,7 @@ import urllib.request
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
-from sqlalchemy import func, select, text
+from sqlalchemy import func, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -201,6 +201,26 @@ def get_owned_submission(
             SubmissionRecord.player_profile_id == profile_id,
         )
     )
+
+
+def expire_submission_sources(
+    session: Session, *, retention_days: int = 30, now: datetime | None = None
+) -> int:
+    """Remove old source from terminal submissions while retaining idempotency metadata."""
+    if retention_days < 1:
+        raise ValueError("retention_days must be positive")
+    cutoff = (now or datetime.now(UTC)) - timedelta(days=retention_days)
+    result = session.execute(
+        update(SubmissionRecord)
+        .where(
+            SubmissionRecord.created_at < cutoff,
+            SubmissionRecord.status.in_(("passed", "failed", "timed_out", "internal_error")),
+            SubmissionRecord.source_code.is_not(None),
+        )
+        .values(source_code=None)
+    )
+    session.commit()
+    return int(result.rowcount or 0)
 
 
 def get_progressive_hint(

@@ -1,3 +1,4 @@
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
@@ -23,6 +24,7 @@ from BackendAPI.app.services.submissions import (
     apply_worker_result,
     build_worker_job,
     create_submission,
+    expire_submission_sources,
     get_owned_submission,
 )
 from pydantic import ValidationError
@@ -112,6 +114,30 @@ def test_submission_rejects_published_version_without_evaluator_rules(db_session
         create_submission(db_session, owner, "signal-coordinate", _payload())
     assert not_evaluable.value.code == "challenge_not_evaluable"
     assert db_session.query(SubmissionRecord).count() == 0
+
+
+def test_source_retention_expires_terminal_source_and_keeps_retry_receipt(db_session):
+    owner = _profile(db_session)
+    completed_payload = _payload()
+    completed, _ = create_submission(db_session, owner, "signal-coordinate", completed_payload)
+    pending, _ = create_submission(db_session, owner, "signal-coordinate", _payload())
+    expired_at = datetime.now(UTC) - timedelta(days=31)
+    completed.status = "passed"
+    completed.created_at = expired_at
+    pending.created_at = expired_at
+    db_session.commit()
+
+    expired_count = expire_submission_sources(db_session, retention_days=30)
+    db_session.refresh(completed)
+    db_session.refresh(pending)
+    assert expired_count == 1
+    assert completed.source_code is None
+    assert completed.request_hash
+    assert pending.source_code is not None
+
+    replay, is_replay = create_submission(db_session, owner, "signal-coordinate", completed_payload)
+    assert is_replay is True
+    assert replay.id == completed.id
 
 
 def test_public_definition_excludes_private_tests_and_worker_job_uses_exact_version(db_session):

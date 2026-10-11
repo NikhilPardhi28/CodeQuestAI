@@ -17,6 +17,7 @@ from docker_runner import EvaluationUnavailable, run_isolated_job
 
 MAX_REQUEST_BYTES = 96 * 1024
 JOB_SLOTS = BoundedSemaphore(2)
+MAX_REQUEST_THREADS = 8
 
 
 class WorkerHandler(BaseHTTPRequestHandler):
@@ -73,10 +74,51 @@ class WorkerHandler(BaseHTTPRequestHandler):
         self.wfile.write(encoded)
 
 
+class BoundedThreadingHTTPServer(ThreadingHTTPServer):
+    """Bound open worker requests and time out slow clients before job admission."""
+
+    def __init__(self, server_address, request_handler):
+        self.request_slots = BoundedSemaphore(MAX_REQUEST_THREADS)
+        super().__init__(server_address, request_handler)
+
+    def get_request(self):
+        request, client_address = super().get_request()
+        request.settimeout(10)
+        return request, client_address
+
+    def process_request(self, request, client_address):
+        if not self.request_slots.acquire(blocking=False):
+            try:
+                request.sendall(
+                    b"HTTP/1.1 503 Service Unavailable\r\n"
+                    b"Content-Length: 0\r\nConnection: close\r\n\r\n"
+                )
+            except OSError:
+                pass
+            self.shutdown_request(request)
+            return
+        try:
+            super().process_request(request, client_address)
+        except Exception:
+            self.request_slots.release()
+            self.shutdown_request(request)
+            raise
+
+    def process_request_thread(self, request, client_address):
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            self.request_slots.release()
+
+    def handle_error(self, _request, _client_address):
+        # Do not write request payloads, including partial source bodies, to stderr.
+        return
+
+
 def main() -> None:
     if not os.environ.get("CODEQUEST_EVALUATION_WORKER_TOKEN"):
         raise SystemExit("worker token is required")
-    server = ThreadingHTTPServer(
+    server = BoundedThreadingHTTPServer(
         (os.environ.get("CODEQUEST_WORKER_HOST", "127.0.0.1"), 8100), WorkerHandler
     )
     server.daemon_threads = True

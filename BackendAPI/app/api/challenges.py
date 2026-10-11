@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Path, Query, Response
 from sqlalchemy.orm import Session
 
-from BackendAPI.app.config import get_settings
+from BackendAPI.app.config import Settings, get_settings
 from BackendAPI.app.db.models import PlayerProfile
 from BackendAPI.app.db.session import SessionLocal, get_db
 from BackendAPI.app.schemas import (
@@ -95,8 +95,8 @@ def post_submission(
     response: Response,
     profile: PlayerProfile = Depends(get_current_profile),
     session: Session = Depends(get_db),
+    settings: Settings = Depends(get_settings),
 ) -> SubmissionOut:
-    settings = get_settings()
     if not settings.evaluation_worker_url or not settings.evaluation_worker_token:
         from BackendAPI.app.services.submissions import SubmissionError
 

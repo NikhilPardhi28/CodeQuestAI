@@ -262,3 +262,136 @@ def test_quest_progress_is_scoped_to_authenticated_profile(
     assert first_quests.json()["total"] == 1
     assert first_quests.json()["items"][0]["questSlug"] == "light-the-signal"
     assert second_quests.json()["total"] == 0
+
+
+def test_challenge_submission_and_polling_are_authenticated_and_owner_scoped(
+    app, client: TestClient, db_session, monkeypatch
+) -> None:
+    from BackendAPI.app.config import get_settings
+    from BackendAPI.app.db.models import CodingChallengeDefinition
+    from BackendAPI.app.services import submissions
+
+    settings = Settings(
+        auth_issuer="https://issuer.test/",
+        auth_audience="codequest-api",
+        auth_jwks_url="https://issuer.test/jwks",
+        evaluation_worker_url="http://127.0.0.1:8100",
+        evaluation_worker_token="local-test-worker-token-that-is-long-enough",
+    )
+    app.dependency_overrides[get_settings] = lambda: settings
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    monkeypatch.setattr(
+        security,
+        "get_jwks_client",
+        lambda _url: SimpleNamespace(
+            get_signing_key_from_jwt=lambda _token: SimpleNamespace(key=private_key.public_key())
+        ),
+    )
+    monkeypatch.setattr(submissions, "dispatch_to_worker", lambda *_args: None)
+
+    def headers_for(subject: str) -> dict[str, str]:
+        now = datetime.now(UTC)
+        token = jwt.encode(
+            {
+                "iss": settings.auth_issuer,
+                "aud": settings.auth_audience,
+                "sub": subject,
+                "iat": now,
+                "exp": now + timedelta(minutes=5),
+            },
+            private_key,
+            algorithm="RS256",
+        )
+        return {"Authorization": f"Bearer {token}"}
+
+    path = "/api/v1/challenges/signal-coordinate/submissions"
+    payload = {
+        "clientSubmissionId": "0fedb4c5-58e0-49b7-8c91-3de94099db6b",
+        "challengeVersion": 1,
+        "source": "def signal_coordinate(x, y): return (x, y)",
+    }
+    assert client.post(path, json=payload).status_code == 401
+
+    owner_headers = headers_for("submission-owner")
+    other_headers = headers_for("submission-other")
+    for headers, name in ((owner_headers, "Owner"), (other_headers, "Other")):
+        assert (
+            client.put("/api/v1/me", json={"displayName": name}, headers=headers).status_code == 200
+        )
+
+    challenge = db_session.get(CodingChallengeDefinition, ("signal-coordinate", 1))
+    original_content = challenge.public_content
+    challenge.public_content = {"kind": "legacy"}
+    db_session.commit()
+    not_evaluable = client.post(path, json=payload, headers=owner_headers)
+    assert not_evaluable.status_code == 409
+    assert not_evaluable.json()["code"] == "challenge_not_evaluable"
+    challenge.public_content = original_content
+    db_session.commit()
+
+    forged = {**payload, "passed": True, "scorePercent": 100, "passedTests": 4}
+    assert client.post(path, json=forged, headers=owner_headers).status_code == 422
+
+    submitted = client.post(path, json=payload, headers=owner_headers)
+    assert submitted.status_code == 202
+    submission_id = submitted.json()["id"]
+    assert submitted.json()["status"] == "queued"
+    assert "source" not in submitted.json()
+
+    replay = client.post(path, json=payload, headers=owner_headers)
+    assert replay.status_code == 200
+    assert replay.json()["id"] == submission_id
+
+    owned = client.get(f"/api/v1/me/submissions/{submission_id}", headers=owner_headers)
+    hidden = client.get(f"/api/v1/me/submissions/{submission_id}", headers=other_headers)
+    assert owned.status_code == 200
+    assert hidden.status_code == 404
+
+
+def test_submission_routes_reject_unauthenticated_and_expired_tokens(
+    app, client: TestClient, db_session, monkeypatch
+) -> None:
+    from BackendAPI.app.config import get_settings
+    from BackendAPI.app.db.models import SubmissionRecord
+    from BackendAPI.app.services import submissions
+
+    app.dependency_overrides[get_settings] = lambda: Settings(
+        auth_issuer="https://issuer.test/",
+        auth_audience="codequest-api",
+        auth_jwks_url="https://issuer.test/jwks",
+    )
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    monkeypatch.setattr(
+        security,
+        "get_jwks_client",
+        lambda _url: SimpleNamespace(
+            get_signing_key_from_jwt=lambda _token: SimpleNamespace(key=private_key.public_key())
+        ),
+    )
+    monkeypatch.setattr(submissions, "dispatch_to_worker", lambda *_args: None)
+    headers = {
+        "Authorization": "Bearer "
+        + jwt.encode(
+            {
+                "iss": "https://issuer.test/",
+                "aud": "codequest-api",
+                "sub": "submission-api-player",
+                "iat": datetime.now(UTC),
+                "exp": datetime.now(UTC) - timedelta(minutes=1),
+            },
+            private_key,
+            algorithm="RS256",
+        )
+    }
+    path = "/api/v1/challenges/signal-coordinate/submissions"
+    body = {
+        "clientSubmissionId": "3e45c88b-a3f8-4d65-9a37-6999aa59179d",
+        "challengeVersion": 1,
+        "source": "def signal_coordinate(x, y): return (x, y)",
+    }
+
+    unauthenticated = client.post(path, json=body)
+    expired = client.post(path, json=body, headers=headers)
+    assert unauthenticated.status_code == 401
+    assert expired.status_code == 401
+    assert db_session.query(SubmissionRecord).count() == 0

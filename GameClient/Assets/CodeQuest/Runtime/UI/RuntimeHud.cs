@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CodeQuest.Core;
@@ -19,7 +20,9 @@ namespace CodeQuest.UI
         private readonly IGameStateService _gameState;
         private readonly IInteractionSource _interaction;
         private readonly QuestService _quests;
+        private readonly PlayerInteractor _playerInteractor;
         private readonly DialogueSession _dialogue;
+        private readonly ITutorHintProvider _tutor = new RuleBasedTutorHintProvider();
         private readonly CancellationTokenSource _lifetime = new CancellationTokenSource();
         private CancellationTokenSource _request;
         private GameObject _menu;
@@ -27,9 +30,11 @@ namespace CodeQuest.UI
         private GameObject _profile;
         private Text _status;
         private Text _catalogText;
+        private Text _catalogTitle;
         private Text _profileText;
         private Text _interactionText;
         private Text _objectiveNotification;
+        private Text _questObjectiveHud;
         private float _notificationUntil;
         private GameObject _journal;
         private GameObject _dialoguePanel;
@@ -37,6 +42,7 @@ namespace CodeQuest.UI
         private Text _dialogueText;
         private Transform _dialogueChoices;
         private GameObject _challengePanel;
+        private GameObject _nextStepButton;
         private Text _challengeTitle;
         private Text _challengeInstructions;
         private Text _challengeFeedback;
@@ -46,6 +52,9 @@ namespace CodeQuest.UI
         private string _activeSubmissionSource;
         private string _activeSubmissionId;
         private int _nextHintLevel = 1;
+        private ChallengeErrorCategory _lastErrorCategory;
+        private bool _valleyOnly;
+        private System.Collections.Generic.List<ChallengeDto> _valleyChallenges = new System.Collections.Generic.List<ChallengeDto>();
         private readonly System.Collections.Generic.List<GameObject> _challengeButtons = new System.Collections.Generic.List<GameObject>();
         private readonly System.Collections.Generic.List<GameObject> _choiceButtons = new System.Collections.Generic.List<GameObject>();
         private bool _returnToMenu;
@@ -58,10 +67,12 @@ namespace CodeQuest.UI
             _gameState = gameState;
             _interaction = interaction;
             _quests = quests;
+            _playerInteractor = interaction as PlayerInteractor;
             _dialogue = new DialogueSession(quests);
             _dialogue.EventRaised += eventId => _quests.RecordWorldEvent("dialogue:" + eventId, QuestObjectiveKind.DialogueEvent, eventId);
             _quests.ObjectiveNotification += ShowObjectiveNotification;
             _quests.Changed += OnQuestChanged;
+            if (_playerInteractor != null) _playerInteractor.InteractionCompleted += OnInteractionCompleted;
             Build(root);
             _ = CheckConnectionAsync();
         }
@@ -70,8 +81,7 @@ namespace CodeQuest.UI
         {
             if (_interactionText != null) _interactionText.text = string.IsNullOrWhiteSpace(_interaction.CurrentPrompt) ? string.Empty : "E  " + _interaction.CurrentPrompt;
             if (_objectiveNotification != null && Time.unscaledTime >= _notificationUntil) _objectiveNotification.text = string.Empty;
-            var target = (_interaction as PlayerInteractor)?.CurrentTarget as NpcDialogueInteractable;
-            if (target != null && UnityEngine.Input.GetKeyDown(KeyCode.E)) OpenDialogue(target.Definition);
+            if (_questObjectiveHud != null) _questObjectiveHud.text = _quests.GetObjectiveHudText();
             if (UnityEngine.Input.GetKeyDown(KeyCode.J)) ShowJournal(true);
             if (_dialoguePanel != null && _dialoguePanel.activeSelf && UnityEngine.Input.GetKeyDown(KeyCode.Escape)) CloseDialogue();
         }
@@ -97,6 +107,7 @@ namespace CodeQuest.UI
             _lifetime.Cancel();
             _quests.ObjectiveNotification -= ShowObjectiveNotification;
             _quests.Changed -= OnQuestChanged;
+            if (_playerInteractor != null) _playerInteractor.InteractionCompleted -= OnInteractionCompleted;
             _dialogue.Cancel();
             _request?.Cancel();
             _request?.Dispose();
@@ -120,20 +131,22 @@ namespace CodeQuest.UI
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1280f, 720f);
             _status = MakeText(canvasObject.transform, "Connection status", new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(20f, -22f), new Vector2(500f, 36f), 18, TextAnchor.UpperLeft);
+            _questObjectiveHud = MakeText(canvasObject.transform, "Quest objective HUD", new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-20f, -22f), new Vector2(600f, 58f), 16, TextAnchor.UpperRight);
             _interactionText = MakeText(canvasObject.transform, "Interaction prompt", new Vector2(.5f, 0f), new Vector2(.5f, 0f), new Vector2(0f, 72f), new Vector2(700f, 40f), 20, TextAnchor.MiddleCenter);
             _objectiveNotification = MakeText(canvasObject.transform, "Objective notification", new Vector2(.5f, 1f), new Vector2(.5f, 1f), new Vector2(0f, -72f), new Vector2(800f, 42f), 18, TextAnchor.MiddleCenter);
             _menu = MakePanel(canvasObject.transform, "Main Menu");
             MakeText(_menu.transform, "Title", new Vector2(.5f, 1f), new Vector2(.5f, 1f), new Vector2(0f, -90f), new Vector2(720f, 72f), 36, TextAnchor.MiddleCenter).text = "CodeQuest AI";
-            MakeText(_menu.transform, "Instructions", new Vector2(.5f, 1f), new Vector2(.5f, 1f), new Vector2(0f, -144f), new Vector2(900f, 40f), 18, TextAnchor.MiddleCenter).text = "WASD move  •  Mouse look  •  Shift run  •  Space jump  •  E interact  •  Esc menu";
+            MakeText(_menu.transform, "Instructions", new Vector2(.5f, 1f), new Vector2(.5f, 1f), new Vector2(0f, -144f), new Vector2(900f, 40f), 18, TextAnchor.MiddleCenter).text = "WASD move  •  Mouse look  •  Shift run  •  Space jump  •  E interact  •  J journal  •  Esc menu";
             MakeButton(_menu.transform, "Start", "Start exploring", new Vector2(0f, -220f), () => ToggleMenu());
-            MakeButton(_menu.transform, "Open catalog", "Curriculum catalog", new Vector2(0f, -280f), () => ShowCatalog(true));
+            MakeButton(_menu.transform, "Open catalog", "Curriculum catalog", new Vector2(0f, -280f), () => { _valleyOnly = false; ShowCatalog(true); });
             MakeButton(_menu.transform, "Open profile", "Player profile", new Vector2(0f, -340f), () => ShowProfile(true));
             _catalog = MakePanel(canvasObject.transform, "Catalog");
-            MakeText(_catalog.transform, "Catalog title", new Vector2(.5f, 1f), new Vector2(.5f, 1f), new Vector2(0f, -56f), new Vector2(700f, 56f), 28, TextAnchor.MiddleCenter).text = "Connected curriculum";
-            _catalogText = MakeText(_catalog.transform, "Catalog results", new Vector2(.5f, .5f), new Vector2(.5f, .5f), Vector2.zero, new Vector2(720f, 360f), 18, TextAnchor.UpperLeft);
+            _catalogTitle = MakeText(_catalog.transform, "Catalog title", new Vector2(.5f, 1f), new Vector2(.5f, 1f), new Vector2(0f, -48f), new Vector2(720f, 52f), 28, TextAnchor.MiddleCenter);
+            _catalogTitle.text = "Connected curriculum";
+            _catalogText = MakeText(_catalog.transform, "Catalog results", new Vector2(.5f, 1f), new Vector2(.5f, 1f), new Vector2(0f, -180f), new Vector2(720f, 150f), 16, TextAnchor.UpperLeft);
             _catalogText.alignment = TextAnchor.UpperLeft;
-            MakeButton(_catalog.transform, "Refresh catalog", "Refresh catalog", new Vector2(-140f, -265f), () => _ = LoadCatalogAsync());
-            MakeButton(_catalog.transform, "Close catalog", "Close", new Vector2(140f, -265f), () => ShowCatalog(false));
+            MakeButton(_catalog.transform, "Refresh catalog", "Refresh catalog", new Vector2(-140f, -535f), () => _ = LoadCatalogAsync());
+            MakeButton(_catalog.transform, "Close catalog", "Close", new Vector2(140f, -535f), () => ShowCatalog(false));
             _profile = MakePanel(canvasObject.transform, "Profile");
             MakeText(_profile.transform, "Profile title", new Vector2(.5f, 1f), new Vector2(.5f, 1f), new Vector2(0f, -56f), new Vector2(700f, 56f), 28, TextAnchor.MiddleCenter).text = "Player profile";
             _profileText = MakeText(_profile.transform, "Profile result", new Vector2(.5f, .5f), new Vector2(.5f, .5f), Vector2.zero, new Vector2(720f, 300f), 20, TextAnchor.MiddleCenter);
@@ -154,10 +167,12 @@ namespace CodeQuest.UI
             _challengeTitle.text = "Python challenge";
             _challengeInstructions = MakeText(_challengePanel.transform, "Challenge instructions", new Vector2(.5f, 1f), new Vector2(.5f, 1f), new Vector2(0f, -112f), new Vector2(760f, 110f), 17, TextAnchor.UpperLeft);
             _challengeSource = MakeInputField(_challengePanel.transform, new Vector2(0f, -310f), new Vector2(760f, 220f));
-            _challengeFeedback = MakeText(_challengePanel.transform, "Challenge feedback", new Vector2(.5f, 0f), new Vector2(.5f, 0f), new Vector2(0f, 88f), new Vector2(760f, 95f), 16, TextAnchor.MiddleLeft);
-            MakeButton(_challengePanel.transform, "Submit challenge", "Submit Python", new Vector2(-270f, -500f), () => _ = SubmitChallengeAsync());
-            MakeButton(_challengePanel.transform, "Request hint", "Next hint", new Vector2(0f, -500f), () => _ = RequestChallengeHintAsync());
-            MakeButton(_challengePanel.transform, "Return to journal", "Quest journal", new Vector2(270f, -500f), () => ShowJournal(true));
+            _challengeFeedback = MakeText(_challengePanel.transform, "Challenge feedback", new Vector2(.5f, 0f), new Vector2(.5f, 0f), new Vector2(0f, 135f), new Vector2(760f, 105f), 15, TextAnchor.MiddleLeft);
+            MakeButton(_challengePanel.transform, "Check function header", "Check header", new Vector2(-340f, -500f), CheckFunctionHeader, 150f);
+            MakeButton(_challengePanel.transform, "Submit challenge", "Submit to evaluator", new Vector2(-170f, -500f), () => _ = SubmitChallengeAsync(), 150f);
+            MakeButton(_challengePanel.transform, "Request hint", "Next hint", new Vector2(0f, -500f), () => _ = RequestChallengeHintAsync(), 150f);
+            MakeButton(_challengePanel.transform, "Cancel polling", "Stop waiting", new Vector2(170f, -500f), StopWaitingForSubmission, 150f);
+            _nextStepButton = MakeButton(_challengePanel.transform, "Next challenge", "Valley challenge list", new Vector2(340f, -500f), ShowNextValleyStep, 150f);
             _catalog.SetActive(false);
             _profile.SetActive(false);
             _journal.SetActive(false);
@@ -184,35 +199,76 @@ namespace CodeQuest.UI
         private async Task LoadCatalogAsync()
         {
             BeginRequest();
-            _catalogText.text = "Loading curriculum and quest catalog…";
+            _catalogText.text = _valleyOnly ? "Loading Variable Valley and its challenge sequence…" : "Loading curriculum and quest catalog…";
             var token = _request.Token;
             try
             {
                 var regions = await _api.GetRegionsAsync(token);
                 if (!regions.IsSuccess) { _catalogText.text = "Could not load regions. " + regions.Error.message; return; }
-                var quests = await _api.GetQuestsAsync(token);
-                if (!quests.IsSuccess) { _catalogText.text = "Could not load quests. " + quests.Error.message; return; }
                 var challenges = await _api.GetChallengesAsync(token);
                 if (!challenges.IsSuccess) { _catalogText.text = "Could not load challenges. " + challenges.Error.message; return; }
+                var listedChallenges = challenges.Value.items ?? new System.Collections.Generic.List<ChallengeDto>();
+                var regionName = "All regions";
+                var regionSummary = "Choose a coding challenge from the published curriculum.";
+                if (_valleyOnly)
+                {
+                    const string valleySlug = "variable-valley";
+                    var region = (regions.Value.items ?? new System.Collections.Generic.List<RegionDto>()).FirstOrDefault(item => item.slug == valleySlug);
+                    if (region == null) { _catalogText.text = "Variable Valley is not present in the current backend catalog."; return; }
+                    regionName = region.name;
+                    regionSummary = region.summary;
+                    var objectives = await _api.GetObjectivesAsync(valleySlug, token);
+                    if (!objectives.IsSuccess) { _catalogText.text = "Could not load region objectives. " + objectives.Error.message; return; }
+                    var objectiveSlugs = new System.Collections.Generic.HashSet<string>(
+                        (objectives.Value.items ?? new System.Collections.Generic.List<ObjectiveDto>()).Select(item => item.slug), StringComparer.Ordinal);
+                    listedChallenges = listedChallenges.Where(item => objectiveSlugs.Contains(item.objectiveSlug)).ToList();
+                    listedChallenges = listedChallenges.OrderBy(item => item.publicContent == null ? 0 : item.publicContent.sequence)
+                        .ThenBy(item => item.slug, StringComparer.Ordinal).ToList();
+                    _valleyChallenges = listedChallenges;
+                }
+                _catalogTitle.text = _valleyOnly ? "Enter " + regionName : "Connected curriculum";
                 var result = "REGIONS\n";
-                foreach (var region in regions.Value.items) result += "• " + region.name + " — " + region.summary + "\n";
-                result += "\nQUESTS\n";
-                foreach (var quest in quests.Value.items) result += "• " + quest.title + " — " + quest.summary + "\n";
-                result += "\nCHALLENGES\n";
-                foreach (var challenge in challenges.Value.items) result += "• " + challenge.title + " — " + challenge.statement + "\n";
+                if (_valleyOnly)
+                {
+                    result += "• " + regionName + " — " + regionSummary + "\n";
+                    result += "\nLEARNING GOALS\n• Store input values in descriptive variables\n• Convert values and build readable outputs\n• Return results from deterministic functions\n\nComplete the five ordered challenges below.";
+                }
+                else
+                {
+                    foreach (var region in regions.Value.items) result += "• " + region.name + " — " + region.summary + "\n";
+                    result += "\nPublished coding challenges are listed below.";
+                }
                 _catalogText.text = result;
                 foreach (var button in _challengeButtons) UnityEngine.Object.Destroy(button);
                 _challengeButtons.Clear();
-                for (var index = 0; index < challenges.Value.items.Count && index < 3; index++)
+                for (var index = 0; index < listedChallenges.Count && index < 8; index++)
                 {
-                    var challenge = challenges.Value.items[index];
-                    var x = (index - 1) * 270f;
-                    _challengeButtons.Add(MakeButton(_catalog.transform, "Open challenge " + challenge.slug,
-                        "Practice: " + challenge.title, new Vector2(x, -205f),
-                        () => _ = OpenChallengeAsync(challenge.slug, challenge.version)));
+                    var challenge = listedChallenges[index];
+                    var content = challenge.publicContent;
+                    var label = content != null && content.sequence > 0
+                        ? content.sequence + ". " + challenge.title
+                        : "Practice: " + challenge.title;
+                    var locked = _valleyOnly && content != null &&
+                        (!_quests.IsQuestStarted(content.questSlug) ||
+                         !string.IsNullOrEmpty(content.prerequisiteChallengeSlug) &&
+                         !_quests.HasCompletedChallenge(content.questSlug, content.prerequisiteChallengeSlug));
+                    var x = index % 2 == 0 ? -140f : 140f;
+                    var y = -370f - (index / 2) * 55f;
+                    var button = MakeButton(_catalog.transform, "Open challenge " + challenge.slug,
+                        label + (locked ? "  (locked)" : string.Empty), new Vector2(x, y),
+                        () => _ = OpenChallengeAsync(challenge.slug, challenge.version), 265f);
+                    button.GetComponent<Button>().interactable = !locked;
+                    if (locked) button.GetComponent<Image>().color = new Color(.12f, .16f, .2f, 1f);
+                    _challengeButtons.Add(button);
                 }
             }
             catch (OperationCanceledException) { _catalogText.text = "Catalog request cancelled."; }
+        }
+
+        private void ShowVariableValley()
+        {
+            _valleyOnly = true;
+            ShowCatalog(true);
         }
 
         private async Task LoadProfileAsync()
@@ -243,9 +299,10 @@ namespace CodeQuest.UI
 
         private void ShowCatalog(bool visible)
         {
+            if (visible) RememberModalReturn();
             _catalog.SetActive(visible);
             if (visible) { _menu.SetActive(false); _profile.SetActive(false); _ = LoadCatalogAsync(); }
-            else _menu.SetActive(true);
+            else RestoreModalReturn();
         }
 
         private void ShowProfile(bool visible)
@@ -278,6 +335,7 @@ namespace CodeQuest.UI
             _activeClientSubmissionId = null;
             _activeSubmissionSource = null;
             _nextHintLevel = 1;
+            _lastErrorCategory = ChallengeErrorCategory.None;
             _catalog.SetActive(false);
             _menu.SetActive(false);
             _challengePanel.SetActive(true);
@@ -292,12 +350,24 @@ namespace CodeQuest.UI
                 return;
             }
             _activeChallenge = result.Value;
+            if (_nextStepButton != null)
+                _nextStepButton.GetComponentInChildren<Text>().text = "Valley challenge list";
             _challengeTitle.text = result.Value.title;
             var content = result.Value.publicContent;
             _challengeInstructions.text = result.Value.statement +
                 (content == null ? string.Empty : "\n\nSignature: " + content.functionSignature +
                 "\n" + content.expectedOutputFormat + "\n\nExamples:\n" + string.Join("\n", content.examples ?? Array.Empty<string>()));
             _challengeSource.text = content == null ? string.Empty : content.starterCode;
+            _challengeFeedback.text = "Local header check examines only the function declaration. Submit uses the protected server evaluator; no code runs on this client.";
+        }
+
+        private void CheckFunctionHeader()
+        {
+            if (_activeChallenge == null || _activeChallenge.publicContent == null) return;
+            var functionName = _activeChallenge.publicContent.functionName;
+            _challengeFeedback.text = ChallengeEditorRules.HasExpectedFunctionHeader(_challengeSource.text, functionName)
+                ? "Local format check passed: expected function declaration found. No code was executed or evaluated."
+                : "Local format check: add a function declaration beginning with def " + functionName + "(. No code was executed.";
         }
 
         private async Task SubmitChallengeAsync()
@@ -314,24 +384,38 @@ namespace CodeQuest.UI
             _activeSubmissionSource = source;
             if (string.IsNullOrEmpty(_activeClientSubmissionId))
                 _activeClientSubmissionId = Guid.NewGuid().ToString();
-            _challengeFeedback.text = "Submitting to the isolated evaluation service…";
+            _challengeFeedback.text = "Submission state: waiting for backend queue…";
             BeginRequest();
-            var result = await _api.SubmitChallengeAsync(_activeChallenge.slug,
-                new ChallengeSubmissionRequestDto
-                {
-                    clientSubmissionId = _activeClientSubmissionId,
-                    challengeVersion = _activeChallenge.version,
-                    source = source
-                }, _request.Token);
-            if (!result.IsSuccess)
+            try
             {
-                _challengeFeedback.text = result.Error.message +
-                    (result.Error.retryable ? " You can retry; the same request key will be reused." : string.Empty);
-                return;
+                var result = await _api.SubmitChallengeAsync(_activeChallenge.slug,
+                    new ChallengeSubmissionRequestDto
+                    {
+                        clientSubmissionId = _activeClientSubmissionId,
+                        challengeVersion = _activeChallenge.version,
+                        source = source
+                    }, _request.Token);
+                if (!result.IsSuccess)
+                {
+                    _lastErrorCategory = result.Error.retryable || result.Error.code == "authentication_required" ||
+                        result.Error.code == "authentication_not_configured" || result.Error.code == "invalid_bearer_token"
+                        ? ChallengeErrorCategory.Network : ChallengeErrorCategory.None;
+                    _challengeFeedback.text = result.Error.code == "authentication_required" || result.Error.code == "authentication_not_configured"
+                        ? "Sign in is required before the protected evaluator can run this submission. Your code was not evaluated."
+                        : result.Error.code == "invalid_bearer_token"
+                            ? "Your sign-in session expired or is invalid. Sign in again; this code was not evaluated."
+                            : result.Error.code == "request_cancelled"
+                                ? "Stopped waiting for the request. The backend may still be processing it; retry unchanged code to reuse the same submission key."
+                                : result.Error.message + (result.Error.retryable
+                                    ? " The evaluator may be temporarily unavailable; retrying unchanged code reuses the same submission key."
+                                    : " No result was recorded.");
+                    return;
+                }
+                _activeSubmissionId = result.Value.id;
+                _challengeFeedback.text = "Submission state: " + result.Value.status + " (server reported).";
+                await PollSubmissionAsync(_activeSubmissionId, _request.Token);
             }
-            _activeSubmissionId = result.Value.id;
-            _challengeFeedback.text = "Evaluation status: " + result.Value.status;
-            await PollSubmissionAsync(_activeSubmissionId, _request.Token);
+            catch (OperationCanceledException) { _challengeFeedback.text = "Stopped waiting. The evaluator may still be processing this request; retry unchanged code to check the same submission."; }
         }
 
         private async Task PollSubmissionAsync(string submissionId, CancellationToken token)
@@ -341,13 +425,20 @@ namespace CodeQuest.UI
                 var result = await _api.GetMySubmissionAsync(submissionId, token);
                 if (!result.IsSuccess)
                 {
+                    if (result.Error.code == "request_cancelled")
+                    {
+                        _challengeFeedback.text = "Stopped polling. The server may continue evaluating; retry unchanged code to check the same idempotent submission.";
+                        return;
+                    }
                     _challengeFeedback.text = "Could not refresh evaluation status. " + result.Error.message;
                     return;
                 }
                 var submission = result.Value;
                 var status = submission.status ?? "internal_error";
-                if (status == "passed" || status == "failed" || status == "timed_out" || status == "internal_error")
+                var parsedStatus = ChallengeStatusRules.FromServer(status);
+                if (ChallengeStatusRules.IsTerminal(parsedStatus))
                 {
+                    if (parsedStatus == SubmissionStatus.InternalError) status = "internal_error";
                     var evaluation = submission.result;
                     if (evaluation == null || !evaluation.hasResult)
                     {
@@ -358,9 +449,41 @@ namespace CodeQuest.UI
                     {
                         var detail = status == "passed" ? "Passed" : "Not passed";
                         detail += " • score " + evaluation.scorePercent + "% • " + evaluation.passedTests + "/" + evaluation.totalTests + " tests";
+                        if (evaluation.visibleResults != null)
+                            for (var index = 0; index < evaluation.visibleResults.Length; index++)
+                            {
+                                var visible = evaluation.visibleResults[index];
+                                detail += "\nVisible case " + (index + 1) + ": " + (visible.passed ? "passed" :
+                                    string.IsNullOrWhiteSpace(visible.diagnosticCode) ? "failed" : visible.diagnosticCode);
+                            }
                         if (evaluation.diagnostics != null)
                             foreach (var diagnostic in evaluation.diagnostics) detail += "\n" + diagnostic.message;
                         _challengeFeedback.text = detail;
+                    }
+                    if (ChallengeStatusRules.IsConfirmedPass(parsedStatus))
+                    {
+                        _lastErrorCategory = ChallengeErrorCategory.None;
+                        var refreshed = await _quests.RefreshProgressAsync(token);
+                        var progression = await _api.GetMyProgressionAsync(token);
+                        if (progression.IsSuccess)
+                            _challengeFeedback.text += "\nServer-confirmed progression: " + progression.Value.experience + " XP, level " + progression.Value.level + ".";
+                        else if (!refreshed)
+                            _challengeFeedback.text += "\nQuest sync requires a valid sign-in; no cloud progress is claimed.";
+                        else
+                            _challengeFeedback.text += "\nQuest progress refreshed from the backend.";
+                        var stepLabel = _nextStepButton == null ? null : _nextStepButton.GetComponentInChildren<Text>();
+                        if (stepLabel != null) stepLabel.text = "Next challenge";
+                    }
+                    else
+                    {
+                        _lastErrorCategory = status == "timed_out" ? ChallengeErrorCategory.Timeout :
+                            status == "internal_error" ? ChallengeErrorCategory.Network : ChallengeErrorCategory.WrongAnswer;
+                        if (evaluation != null && evaluation.diagnostics != null && evaluation.diagnostics.Length > 0 &&
+                            (evaluation.diagnostics[0].code == "syntax_error" || evaluation.diagnostics[0].code == "compile_error"))
+                            _lastErrorCategory = ChallengeErrorCategory.Syntax;
+                        else if (evaluation != null && evaluation.diagnostics != null && evaluation.diagnostics.Length > 0 &&
+                                 evaluation.diagnostics[0].code == "runtime_error")
+                            _lastErrorCategory = ChallengeErrorCategory.Runtime;
                     }
                     return;
                 }
@@ -380,16 +503,49 @@ namespace CodeQuest.UI
         private async Task RequestChallengeHintAsync()
         {
             if (_activeChallenge == null) return;
-            BeginRequest();
-            var result = await _api.GetChallengeHintAsync(_activeChallenge.slug, _activeChallenge.version,
-                _nextHintLevel, _request.Token);
-            if (!result.IsSuccess)
+            var completed = _quests.Progress.Where(item => item.syncState == QuestSyncState.ServerConfirmed)
+                .Sum(item => item.objectiveCounts.Values.Sum());
+            _challengeFeedback.text = "Hint " + _nextHintLevel + ": " + _tutor.GetHint(new TutorHintContext
             {
-                _challengeFeedback.text = result.Error.message;
+                PublishedHints = _activeChallenge.publicContent == null ? null : _activeChallenge.publicContent.visibleHints,
+                HintLevel = _nextHintLevel,
+                CompletedChallenges = completed,
+                LastError = _lastErrorCategory
+            });
+            _nextHintLevel++;
+            await Task.CompletedTask;
+        }
+
+        private void ShowNextValleyStep()
+        {
+            if (_activeChallenge?.publicContent == null || _activeChallenge.publicContent.sequence < 1)
+            {
+                ShowVariableValley();
                 return;
             }
-            _challengeFeedback.text = "Hint " + result.Value.level + ": " + result.Value.content;
-            _nextHintLevel++;
+            var nextSequence = _activeChallenge.publicContent.sequence + 1;
+            var next = _valleyChallenges.FirstOrDefault(item => item.publicContent != null && item.publicContent.sequence == nextSequence);
+            if (next != null && (string.IsNullOrEmpty(next.publicContent.prerequisiteChallengeSlug) ||
+                _quests.HasCompletedChallenge(next.publicContent.questSlug, next.publicContent.prerequisiteChallengeSlug)))
+                _ = OpenChallengeAsync(next.slug, next.version);
+            else if (next != null)
+            {
+                _challengeFeedback.text = "The next lesson unlocks after the backend confirms this challenge and quest progress.";
+                ShowVariableValley();
+            }
+            else
+                ShowVariableValley();
+        }
+
+        private void StopWaitingForSubmission()
+        {
+            if (_request == null || _request.IsCancellationRequested)
+            {
+                _challengeFeedback.text = "No request is currently being polled.";
+                return;
+            }
+            _request.Cancel();
+            _challengeFeedback.text = "Stopped polling. The server may still be processing this submission; retry unchanged code with the same key to check its status.";
         }
 
         private void OpenDialogue(DialogueDefinition definition)
@@ -420,9 +576,15 @@ namespace CodeQuest.UI
             for (var index = 0; index < choices.Count; index++)
             {
                 var choiceIndex = index;
-                var y = -310f - index * 56f;
+                var y = -265f - index * 48f;
                 var button = MakeButton(_dialogueChoices, "Dialogue choice " + index, choices[index].label, new Vector2(0f, y), () =>
                 {
+                    var selected = _dialogue.VisibleChoices()[choiceIndex];
+                    if (!string.IsNullOrWhiteSpace(selected.acceptQuestSlug))
+                    {
+                        _quests.RecordEvent(selected.acceptQuestSlug, Guid.NewGuid().ToString("D"),
+                            QuestObjectiveKind.Interact, "valley-mentor");
+                    }
                     _dialogue.Choose(choiceIndex);
                     RenderDialogue();
                 });
@@ -445,8 +607,16 @@ namespace CodeQuest.UI
 
         private void OnQuestChanged(QuestProgressSnapshot _)
         {
+            if (_questObjectiveHud != null) _questObjectiveHud.text = _quests.GetObjectiveHudText();
             if (_journal != null && _journal.activeSelf)
                 _journalText.text = _quests.GetJournalText() + "\n\n" + _quests.PersistenceStatus;
+        }
+
+        private void OnInteractionCompleted(IInteractable interactable)
+        {
+            if (interactable is NpcDialogueInteractable npc) OpenDialogue(npc.Definition);
+            else if (interactable is LearningRegionPortalInteractable portal && portal.RegionSlug == "variable-valley")
+                ShowVariableValley();
         }
 
         private void RememberModalReturn()
@@ -495,14 +665,14 @@ namespace CodeQuest.UI
             return text;
         }
 
-        private static GameObject MakeButton(Transform parent, string name, string label, Vector2 position, Action onClick)
+        private static GameObject MakeButton(Transform parent, string name, string label, Vector2 position, Action onClick, float width = 250f)
         {
             var buttonObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
             buttonObject.transform.SetParent(parent, false);
             var rect = buttonObject.GetComponent<RectTransform>();
             rect.anchorMin = new Vector2(.5f, 1f);
             rect.anchorMax = new Vector2(.5f, 1f);
-            rect.sizeDelta = new Vector2(250f, 48f);
+            rect.sizeDelta = new Vector2(width, 48f);
             rect.anchoredPosition = position;
             buttonObject.GetComponent<Image>().color = new Color(.12f, .35f, .57f, 1f);
             buttonObject.GetComponent<Button>().onClick.AddListener(() => onClick());
@@ -523,6 +693,7 @@ namespace CodeQuest.UI
             rect.anchoredPosition = position;
             inputObject.GetComponent<Image>().color = new Color(.025f, .035f, .05f, 1f);
             var text = MakeText(inputObject.transform, "Code text", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, 16, TextAnchor.UpperLeft);
+            text.font = Font.CreateDynamicFontFromOSFont(new[] { "Cascadia Mono", "Consolas", "monospace" }, 16);
             text.rectTransform.offsetMin = new Vector2(12f, 10f);
             text.rectTransform.offsetMax = new Vector2(-12f, -10f);
             text.fontStyle = FontStyle.Normal;

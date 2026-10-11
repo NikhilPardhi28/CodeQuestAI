@@ -25,13 +25,13 @@ def test_development_seed_is_idempotent(db_session) -> None:
         "questRules": 0,
     }
     assert second == first
-    assert db_session.scalar(select(func.count()).select_from(CurriculumRegion)) == 3
+    assert db_session.scalar(select(func.count()).select_from(CurriculumRegion)) == 4
 
 
 def test_public_catalog_queries_return_latest_published_rows(db_session) -> None:
     regions, total = catalog.list_regions(db_session, limit=2, offset=0)
-    assert total == 3
-    assert [region.slug for region in regions] == ["variable-vale", "typeworks"]
+    assert total == 4
+    assert [region.slug for region in regions] == ["variable-valley", "variable-vale"]
     assert catalog.get_quest(db_session, "light-the-signal").version == 2
     assert catalog.get_challenge(db_session, "signal-coordinate").version == 2
 

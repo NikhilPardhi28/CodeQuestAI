@@ -3,6 +3,7 @@ using System;
 using System.Reflection;
 using System.Threading;
 using CodeQuest.Gameplay.Camera;
+using CodeQuest.Gameplay.Dialogue;
 using CodeQuest.Gameplay.Input;
 using CodeQuest.Gameplay.Interaction;
 using CodeQuest.Gameplay.Player;
@@ -102,6 +103,40 @@ namespace CodeQuest.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator RuntimeHubContainsValleyMentorAndLearningPortal()
+        {
+            yield return null;
+            var mentor = GameObject.Find("Mira - Valley Guide NPC");
+            var portal = GameObject.Find("Variable Valley Learning Gate");
+            Assert.IsNotNull(mentor);
+            Assert.IsNotNull(mentor.GetComponent<NpcDialogueInteractable>());
+            Assert.IsNotNull(portal);
+            Assert.IsNotNull(portal.GetComponent<LearningRegionPortalInteractable>());
+            Assert.AreEqual("variable-valley", portal.GetComponent<LearningRegionPortalInteractable>().RegionSlug);
+        }
+
+        [UnityTest]
+        public IEnumerator LearningPortalPublishesAnInteractionActivation()
+        {
+            var player = new GameObject("portal-test-player");
+            player.transform.position = new Vector3(90f, 0f, 0f);
+            var interactor = player.AddComponent<PlayerInteractor>();
+            interactor.Initialize(new FixedInput());
+            var portalObject = new GameObject("portal-test-target");
+            portalObject.transform.position = new Vector3(90f, 0f, 1f);
+            portalObject.AddComponent<SphereCollider>().isTrigger = true;
+            var portal = portalObject.AddComponent<LearningRegionPortalInteractable>();
+            portal.Configure("variable-valley", "Enter Variable Valley");
+            var activated = false;
+            portal.Activated += () => activated = true;
+            yield return null;
+            Assert.IsTrue(interactor.TryInteract());
+            Assert.IsTrue(activated);
+            Object.Destroy(player);
+            Object.Destroy(portalObject);
+        }
+
+        [UnityTest]
         public IEnumerator ApiClientReadsLiveCatalogAndRejectsUnauthenticatedProfile()
         {
             var baseUrl = Environment.GetEnvironmentVariable("CODEQUEST_TEST_API_BASE_URL");
@@ -122,6 +157,17 @@ namespace CodeQuest.Tests.PlayMode
                     ? "Catalog request failed."
                     : $"Catalog request failed ({catalog.Error.code}, HTTP {catalog.StatusCode}): {catalog.Error.message}");
             Assert.Greater(catalog.Value.total, 0);
+
+            var challengeRequest = api.GetChallengesAsync(CancellationToken.None);
+            while (!challengeRequest.IsCompleted) yield return null;
+            Assert.IsTrue(challengeRequest.Result.IsSuccess, "Challenge catalog did not load.");
+            var valleyChallenges = challengeRequest.Result.Value.items.FindAll(item =>
+                item.publicContent != null && item.publicContent.questSlug == "variables-in-the-valley");
+            Assert.AreEqual(5, valleyChallenges.Count);
+            Assert.AreEqual(1, valleyChallenges[0].version);
+            var exactVersion = api.GetChallengeAsync("valley-name-tag", 1, CancellationToken.None);
+            while (!exactVersion.IsCompleted) yield return null;
+            Assert.IsTrue(exactVersion.Result.IsSuccess, "Exact published challenge version did not load.");
 
             var profileRequest = api.GetMyProfileAsync(CancellationToken.None);
             while (!profileRequest.IsCompleted) yield return null;

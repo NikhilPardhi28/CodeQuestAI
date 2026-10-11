@@ -52,6 +52,22 @@ namespace CodeQuest.Gameplay.Quests
         public int revision;
         public QuestObjectiveServerProgress[] objectiveProgress;
         public bool replayed;
+        public QuestRewardConfirmation[] newlyGrantedRewards;
+        public QuestProgressionSnapshot progression;
+    }
+
+    [Serializable] public sealed class QuestRewardConfirmation
+    {
+        public string rewardId;
+        public string rewardType;
+        public int experiencePoints;
+    }
+
+    [Serializable] public sealed class QuestProgressionSnapshot
+    {
+        public int experience;
+        public int level;
+        public int revision;
     }
 
     public sealed class QuestEventSubmissionResult
@@ -114,6 +130,7 @@ namespace CodeQuest.Gameplay.Quests
         private const int MaxPendingEvents = 32;
         private readonly Dictionary<string, QuestDefinition> _definitions = new Dictionary<string, QuestDefinition>();
         private readonly Dictionary<string, QuestProgressSnapshot> _progress = new Dictionary<string, QuestProgressSnapshot>();
+        private readonly Dictionary<string, QuestEventServerResult> _loadedServerStates = new Dictionary<string, QuestEventServerResult>();
         private readonly List<PendingEvent> _pending = new List<PendingEvent>();
         private readonly IQuestProgressPersistence _persistence;
         private readonly CancellationTokenSource _lifetime = new CancellationTokenSource();
@@ -148,6 +165,9 @@ namespace CodeQuest.Gameplay.Quests
                     lastError = _loadFinished ? _loadError : null
                 };
             }
+            if (_loadSucceeded && _loadedServerStates.TryGetValue(definition.questId, out var loaded) &&
+                loaded.questVersion == definition.version)
+                ApplyServerState(_progress[definition.questId], loaded);
             Changed?.Invoke(_progress[definition.questId]);
             return true;
         }
@@ -217,8 +237,51 @@ namespace CodeQuest.Gameplay.Quests
             StartWorker();
         }
 
-        public bool IsQuestActive(string questId) => _progress.TryGetValue(questId, out var progress) && progress.status == QuestStatus.Active;
+        public async Task<bool> RefreshProgressAsync(CancellationToken cancellationToken)
+        {
+            var result = await _persistence.LoadAsync(cancellationToken);
+            if (!result.IsSuccess) return false;
+            _loadSucceeded = true;
+            _loadedServerStates.Clear();
+            foreach (var serverProgress in result.Items ?? Array.Empty<QuestEventServerResult>())
+            {
+                if (serverProgress == null) continue;
+                _loadedServerStates[serverProgress.questSlug] = serverProgress;
+                if (_progress.TryGetValue(serverProgress.questSlug, out var local) && local.version == serverProgress.questVersion)
+                {
+                    ApplyServerState(local, serverProgress);
+                    Changed?.Invoke(local);
+                }
+            }
+            return true;
+        }
+
+        public bool IsQuestActive(string questId) => _progress.TryGetValue(questId, out var progress) &&
+            (progress.status == QuestStatus.Active || HasPending(questId));
+        public bool IsQuestStarted(string questId) => _progress.TryGetValue(questId, out var progress) &&
+            (progress.status == QuestStatus.Active || progress.status == QuestStatus.Completed || HasPending(questId));
         public bool IsQuestCompleted(string questId) => _progress.TryGetValue(questId, out var progress) && progress.status == QuestStatus.Completed && progress.syncState == QuestSyncState.ServerConfirmed;
+
+        public bool HasCompletedChallenge(string questId, string challengeSlug)
+        {
+            if (!_progress.TryGetValue(questId, out var progress) || progress.syncState != QuestSyncState.ServerConfirmed ||
+                !_definitions.TryGetValue(questId, out var definition)) return false;
+            var objective = definition.objectives.FirstOrDefault(item => item.kind == QuestObjectiveKind.ChallengePassed && item.targetId == challengeSlug);
+            return objective != null && progress.objectiveCounts.TryGetValue(objective.id, out var count) && count >= objective.targetCount;
+        }
+
+        public string GetObjectiveHudText()
+        {
+            var activeDefinition = _definitions.Values.FirstOrDefault(item =>
+                _progress.TryGetValue(item.questId, out var progress) &&
+                (progress.status == QuestStatus.Active || HasPending(item.questId)));
+            if (activeDefinition == null) return "Variable Valley • Find Mira and accept the beacon quest";
+            var progressSnapshot = _progress[activeDefinition.questId];
+            var objective = activeDefinition.objectives.FirstOrDefault(item =>
+                !progressSnapshot.objectiveCounts.TryGetValue(item.id, out var count) || count < item.targetCount);
+            var sync = progressSnapshot.syncState == QuestSyncState.ServerConfirmed ? "Cloud saved" : progressSnapshot.syncState.ToString();
+            return activeDefinition.title + " • " + (objective == null ? "All objectives complete" : objective.description) + " • " + sync;
+        }
 
         public string GetJournalText()
         {
@@ -246,10 +309,15 @@ namespace CodeQuest.Gameplay.Quests
                 if (result.IsSuccess)
                 {
                     _loadSucceeded = true;
+                    _loadedServerStates.Clear();
                     foreach (var serverProgress in result.Items)
-                        if (serverProgress != null && _progress.TryGetValue(serverProgress.questSlug, out var local) &&
+                    {
+                        if (serverProgress == null) continue;
+                        _loadedServerStates[serverProgress.questSlug] = serverProgress;
+                        if (_progress.TryGetValue(serverProgress.questSlug, out var local) &&
                             local.version == serverProgress.questVersion)
                             ApplyServerState(local, serverProgress);
+                    }
                     foreach (var local in _progress.Values)
                         if (local.syncState != QuestSyncState.ServerConfirmed)
                             local.syncState = QuestSyncState.ServerConfirmed;

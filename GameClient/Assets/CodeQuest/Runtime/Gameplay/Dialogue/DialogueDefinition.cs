@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace CodeQuest.Gameplay.Dialogue
 {
-    public enum DialogueConditionKind { Always, QuestActive, QuestCompleted }
+    public enum DialogueConditionKind { Always, QuestActive, QuestCompleted, QuestNotStarted }
 
     [Serializable]
     public sealed class DialogueChoice
@@ -12,6 +12,7 @@ namespace CodeQuest.Gameplay.Dialogue
         public string nextNodeId;
         public DialogueConditionKind condition;
         public string questId;
+        public string acceptQuestSlug;
     }
 
     [Serializable]
@@ -40,6 +41,7 @@ namespace CodeQuest.Gameplay.Dialogue
     {
         bool IsQuestActive(string questId);
         bool IsQuestCompleted(string questId);
+        bool IsQuestStarted(string questId);
     }
 
     public sealed class DialogueSession
@@ -80,7 +82,8 @@ namespace CodeQuest.Gameplay.Dialogue
                 if (choice == null) continue;
                 var visible = choice.condition == DialogueConditionKind.Always ||
                     (choice.condition == DialogueConditionKind.QuestActive && _conditions != null && _conditions.IsQuestActive(choice.questId)) ||
-                    (choice.condition == DialogueConditionKind.QuestCompleted && _conditions != null && _conditions.IsQuestCompleted(choice.questId));
+                    (choice.condition == DialogueConditionKind.QuestCompleted && _conditions != null && _conditions.IsQuestCompleted(choice.questId)) ||
+                    (choice.condition == DialogueConditionKind.QuestNotStarted && _conditions != null && !_conditions.IsQuestStarted(choice.questId));
                 if (visible) result.Add(choice);
             }
             return result;

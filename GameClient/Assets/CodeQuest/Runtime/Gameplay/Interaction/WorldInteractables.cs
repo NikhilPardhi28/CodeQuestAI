@@ -5,6 +5,18 @@ using UnityEngine;
 
 namespace CodeQuest.Gameplay.Interaction
 {
+    public sealed class LearningRegionPortalInteractable : InteractableBehaviour
+    {
+        public event Action Activated;
+        public string RegionSlug { get; private set; }
+        public void Configure(string regionSlug, string prompt)
+        {
+            RegionSlug = regionSlug;
+            base.Configure("portal-" + regionSlug, prompt, 10);
+        }
+        public override void Interact(GameObject interactor) => Activated?.Invoke();
+    }
+
     public abstract class StatefulWorldInteractable : InteractableBehaviour
     {
         [SerializeField] private string questId;

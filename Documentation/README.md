@@ -1,6 +1,6 @@
 # CodeQuest AI architecture baseline
 
-**Status:** architecture baseline plus Milestones 5 and 6 foundations, 2026-10-11. The repository contains versioned API contracts, reversible migrations, seed rules, backend service/tests, and Unity runtime source/package pins. The latest Milestone 6 Unity batch invocation could not establish a licensing-client connection, so current Unity compilation and Test Runner results remain unverified. These documents still describe many planned systems rather than implemented features. `TBD` items are unresolved product/engineering choices; do not silently treat proposals as requirements.
+**Status:** architecture baseline plus Milestones 5–9 foundations, 2026-10-11. The repository contains versioned API contracts, reversible migrations, server-authoritative quest/reward rules, the trusted-evaluation boundary, and a playable Unity hub with a data-driven Variable Valley slice. Unity compilation and EditMode/PlayMode suites were run under the installed editor. Real OIDC integration and production Python sandbox execution remain blocked/unverified; the documents also retain many future systems. `TBD` items are unresolved product/engineering choices; do not silently treat proposals as requirements.
 
 ## Documents
 
@@ -16,7 +16,9 @@
 10. [Database setup, migrations, and seed data](../Database/README.md)
 11. [Milestone 5 reusable gameplay foundation](milestone-5-gameplay.md)
 12. [Milestone 6 authoritative quest events](milestone-6-quest-events.md)
-13. [Generated OpenAPI v1](api/openapi-v1.json) and [OpenAPI v2](api/openapi-v2.json)
+13. [Milestone 8 runtime verification and security hardening](milestone-8-runtime-verification.md)
+14. [Milestone 9 playable coding quest vertical slice](milestone-9-vertical-slice.md)
+15. [Generated OpenAPI v1](api/openapi-v1.json) and [OpenAPI v2](api/openapi-v2.json)
 
 ## Proposed documentation manifest
 

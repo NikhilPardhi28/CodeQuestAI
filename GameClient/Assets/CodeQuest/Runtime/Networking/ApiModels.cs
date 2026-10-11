@@ -85,6 +85,9 @@ namespace CodeQuest.Networking
         public string starterCode;
         public string[] examples;
         public string[] visibleHints;
+        public string questSlug;
+        public string prerequisiteChallengeSlug;
+        public int sequence;
         public string expectedOutputFormat;
     }
 
@@ -171,6 +174,7 @@ namespace CodeQuest.Networking
         public int revision;
         public string updatedAt;
     }
+
 
     [Serializable] public sealed class AchievementAwardDto
     {

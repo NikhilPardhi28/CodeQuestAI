@@ -139,6 +139,60 @@ def seed_development(session: Session) -> dict[str, int]:
         counts["objectives"] += _insert_if_missing(session, LearningObjective, (slug, 1), **values)
         objective_versions[slug] = 1
 
+    # The first playable region is an additive, versioned content pack. Existing
+    # curriculum rows remain untouched so older quests and clients keep working.
+    valley_region = {
+        "slug": "variable-valley",
+        "version": 1,
+        "name": "Variable Valley",
+        "summary": "Learn to store values, accept inputs, and return clear outputs.",
+        "sort_order": 0,
+        "unlock_region_slug": None,
+        "unlock_region_version": None,
+        "is_published": True,
+    }
+    counts["regions"] += _insert_if_missing(
+        session,
+        CurriculumRegion,
+        (valley_region["slug"], valley_region["version"]),
+        **valley_region,
+    )
+    valley_objective = {
+        "slug": "valley-variables-and-io",
+        "version": 1,
+        "region_slug": "variable-valley",
+        "region_version": 1,
+        "title": "Variables and input/output",
+        "summary": "Store function inputs in variables and return readable results.",
+        "sort_order": 1,
+        "prerequisites": [],
+        "is_published": True,
+    }
+    counts["objectives"] += _insert_if_missing(
+        session,
+        LearningObjective,
+        (valley_objective["slug"], valley_objective["version"]),
+        **valley_objective,
+    )
+    valley_quest = {
+        "slug": "variables-in-the-valley",
+        "version": 1,
+        "region_slug": "variable-valley",
+        "region_version": 1,
+        "objective_slug": "valley-variables-and-io",
+        "objective_version": 1,
+        "title": "A Message for the Valley",
+        "summary": (
+            "Help Mira restore the valley beacon by solving five variable and input/output "
+            "challenges."
+        ),
+        "public_content": {"kind": "main", "estimatedMinutes": 20},
+        "is_published": True,
+    }
+    counts["quests"] += _insert_if_missing(
+        session, QuestDefinition, (valley_quest["slug"], 1), **valley_quest
+    )
+
     quest_rows = [
         (
             "light-the-signal",
@@ -334,6 +388,7 @@ def seed_development(session: Session) -> dict[str, int]:
                         content=content,
                     )
                 )
+
         versioned_digest = hashlib.sha256(
             json.dumps(
                 {
@@ -382,6 +437,273 @@ def seed_development(session: Session) -> dict[str, int]:
                         content=content,
                     )
                 )
+
+    valley_challenges = [
+        {
+            "slug": "valley-name-tag",
+            "title": "A Name for the Beacon",
+            "statement": "Store the supplied name in a variable and return a friendly greeting.",
+            "function": "make_name_tag",
+            "signature": "make_name_tag(name)",
+            "starter": (
+                "def make_name_tag(name):\n    # Store a greeting, then return it.\n    pass\n"
+            ),
+            "examples": ["make_name_tag('Ada') returns 'Hello, Ada!'"],
+            "visible": [
+                {"input": ["Ada"], "expected": "Hello, Ada!"},
+                {"input": ["Kai"], "expected": "Hello, Kai!"},
+            ],
+            "hidden": [
+                {"input": ["Mira"], "expected": "Hello, Mira!"},
+                {"input": ["River"], "expected": "Hello, River!"},
+            ],
+            "hints": [
+                "Give the input a descriptive variable name before building the result.",
+                "Join the greeting text, the name variable, and the exclamation mark.",
+                "Assign the joined string to a variable, then return that variable.",
+            ],
+        },
+        {
+            "slug": "valley-sunplot-area",
+            "title": "The Sunplot",
+            "statement": (
+                "Use the width and height inputs to calculate and return the rectangular garden "
+                "area."
+            ),
+            "function": "calculate_plot_area",
+            "signature": "calculate_plot_area(width, height)",
+            "starter": (
+                "def calculate_plot_area(width, height):\n"
+                "    # Store the calculated area in a variable.\n"
+                "    pass\n"
+            ),
+            "examples": ["calculate_plot_area(4, 3) returns 12"],
+            "visible": [
+                {"input": [4, 3], "expected": 12},
+                {"input": [5, 2], "expected": 10},
+            ],
+            "hidden": [
+                {"input": [7, 6], "expected": 42},
+                {"input": [0, 9], "expected": 0},
+            ],
+            "hints": [
+                "The function receives two values that describe the rectangle.",
+                "Area is found by multiplying width by height.",
+                "Save width * height in an area variable and return it.",
+            ],
+        },
+        {
+            "slug": "valley-signal-label",
+            "title": "Label the Signal",
+            "statement": "Turn the numeric signal level into the exact text shown by the example.",
+            "function": "format_signal",
+            "signature": "format_signal(level)",
+            "starter": (
+                "def format_signal(level):\n"
+                "    # Return a label such as 'Signal level: 3'.\n"
+                "    pass\n"
+            ),
+            "examples": ["format_signal(3) returns 'Signal level: 3'"],
+            "visible": [
+                {"input": [3], "expected": "Signal level: 3"},
+                {"input": [0], "expected": "Signal level: 0"},
+            ],
+            "hidden": [
+                {"input": [12], "expected": "Signal level: 12"},
+                {"input": [-1], "expected": "Signal level: -1"},
+            ],
+            "hints": [
+                "The input is a number, while the result must be text.",
+                "Convert the level to text with str(level) before joining it.",
+                "Store 'Signal level: ' + str(level) in a variable and return it.",
+            ],
+        },
+        {
+            "slug": "valley-seed-count",
+            "title": "Count the Seeds",
+            "statement": (
+                "Calculate how many seeds are planted when every row receives the same number."
+            ),
+            "function": "seed_total",
+            "signature": "seed_total(rows, seeds_per_row)",
+            "starter": (
+                "def seed_total(rows, seeds_per_row):\n"
+                "    # Store the total seed count in a variable.\n"
+                "    pass\n"
+            ),
+            "examples": ["seed_total(3, 8) returns 24"],
+            "visible": [
+                {"input": [3, 8], "expected": 24},
+                {"input": [2, 5], "expected": 10},
+            ],
+            "hidden": [
+                {"input": [6, 7], "expected": 42},
+                {"input": [1, 0], "expected": 0},
+            ],
+            "hints": [
+                "Each row has an equal number of seeds.",
+                "Repeated equal groups are counted with multiplication.",
+                "Assign rows * seeds_per_row to a total variable and return it.",
+            ],
+        },
+        {
+            "slug": "valley-beacon-message",
+            "title": "Restore the Beacon Message",
+            "statement": "Combine the learner and region inputs into the exact beacon message.",
+            "function": "compose_beacon_message",
+            "signature": "compose_beacon_message(name, region)",
+            "starter": (
+                "def compose_beacon_message(name, region):\n"
+                "    # Build and return the beacon message.\n"
+                "    pass\n"
+            ),
+            "examples": ["compose_beacon_message('Ada', 'Valley') returns 'Ada reached Valley!'"],
+            "visible": [
+                {"input": ["Ada", "Valley"], "expected": "Ada reached Valley!"},
+                {"input": ["Kai", "Orchard"], "expected": "Kai reached Orchard!"},
+            ],
+            "hidden": [
+                {"input": ["Mira", "Valley"], "expected": "Mira reached Valley!"},
+                {"input": ["Fox", "Grove"], "expected": "Fox reached Grove!"},
+            ],
+            "hints": [
+                "Both inputs are strings that belong in one output sentence.",
+                "Keep the spaces around the word reached and at the end of the sentence.",
+                "Join name, ' reached ', region, and '!' in that order.",
+            ],
+        },
+    ]
+    previous_challenge_slug = ""
+    for sequence, challenge in enumerate(valley_challenges, start=1):
+        slug = challenge["slug"]
+        public_content = {
+            "mode": "function",
+            "functionName": challenge["function"],
+            "functionSignature": challenge["signature"],
+            "starterCode": challenge["starter"],
+            "examples": challenge["examples"],
+            "visibleTests": challenge["visible"],
+            "visibleHints": challenge["hints"],
+            "questSlug": "variables-in-the-valley",
+            "prerequisiteChallengeSlug": previous_challenge_slug,
+            "sequence": sequence,
+            "expectedOutputFormat": "Return the exact value described by the function signature.",
+        }
+        digest_input = json.dumps(
+            {
+                "slug": slug,
+                "version": 1,
+                "statement": challenge["statement"],
+                "public": public_content,
+                "hidden": challenge["hidden"],
+                "hints": challenge["hints"],
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode()
+        counts["challenges"] += _insert_if_missing(
+            session,
+            CodingChallengeDefinition,
+            (slug, 1),
+            slug=slug,
+            version=1,
+            objective_slug="valley-variables-and-io",
+            objective_version=1,
+            title=challenge["title"],
+            statement=challenge["statement"],
+            public_content=public_content,
+            content_digest=hashlib.sha256(digest_input).hexdigest(),
+            max_source_bytes=8192,
+            is_published=True,
+        )
+        for position, test_definition in enumerate(challenge["hidden"]):
+            if (
+                session.query(ChallengeHiddenTestCase)
+                .filter_by(challenge_slug=slug, challenge_version=1, position=position)
+                .first()
+                is None
+            ):
+                session.add(
+                    ChallengeHiddenTestCase(
+                        challenge_slug=slug,
+                        challenge_version=1,
+                        position=position,
+                        test_definition=test_definition,
+                    )
+                )
+        for level, content in enumerate(challenge["hints"], start=1):
+            if (
+                session.query(ChallengeHint)
+                .filter_by(challenge_slug=slug, challenge_version=1, level=level)
+                .first()
+                is None
+            ):
+                session.add(
+                    ChallengeHint(
+                        challenge_slug=slug,
+                        challenge_version=1,
+                        level=level,
+                        content=content,
+                    )
+                )
+        previous_challenge_slug = slug
+
+    valley_targets = [("interact", "valley-mentor", 1)] + [
+        ("challenge_passed", challenge["slug"], 1) for challenge in valley_challenges
+    ]
+    for event_type, target_id, target_version in valley_targets:
+        counts["questRules"] += _insert_if_missing(
+            session,
+            QuestEventTarget,
+            (event_type, target_id, target_version),
+            event_type=event_type,
+            target_id=target_id,
+            target_version=target_version,
+            is_enabled=True,
+        )
+    valley_objectives = [
+        ("accept-valley-quest", "interact", "valley-mentor"),
+        *[
+            (f"complete-{challenge['slug']}", "challenge_passed", challenge["slug"])
+            for challenge in valley_challenges
+        ],
+    ]
+    for objective_id, event_type, target_id in valley_objectives:
+        counts["questRules"] += _insert_if_missing(
+            session,
+            QuestObjectiveRule,
+            ("variables-in-the-valley", 1, objective_id),
+            quest_slug="variables-in-the-valley",
+            quest_version=1,
+            objective_id=objective_id,
+            event_type=event_type,
+            target_id=target_id,
+            target_version=1,
+            required_count=1,
+        )
+    previous_objective = "accept-valley-quest"
+    for challenge in valley_challenges:
+        objective_id = f"complete-{challenge['slug']}"
+        counts["questRules"] += _insert_if_missing(
+            session,
+            QuestObjectivePrerequisite,
+            ("variables-in-the-valley", 1, objective_id, previous_objective),
+            quest_slug="variables-in-the-valley",
+            quest_version=1,
+            objective_id=objective_id,
+            prerequisite_objective_id=previous_objective,
+        )
+        previous_objective = objective_id
+    counts["questRules"] += _insert_if_missing(
+        session,
+        QuestRewardRule,
+        ("variables-in-the-valley", 1, "valley-beacon-xp"),
+        quest_slug="variables-in-the-valley",
+        quest_version=1,
+        reward_id="valley-beacon-xp",
+        reward_type="experience",
+        experience_points=50,
+    )
 
     targets = [
         ("interact", "relay-switch", 1),

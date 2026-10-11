@@ -39,7 +39,7 @@ Challenge source is persisted for delivery to the separately configured worker a
 
 ## Seed data
 
-`python -m BackendAPI.app.db.seed` inserts only missing rows. It never overwrites existing content. Current development content covers three regions, six objectives, three quests and their event rules/targets, three public challenges with separate hidden tests and progressive hints, and two achievements. It includes no player accounts, reference solutions, or learner submission source.
+`python -m BackendAPI.app.db.seed` inserts only missing rows. It never overwrites existing content. Current development content covers the original three curriculum regions plus Variable Valley, seven learning objectives, four quests and their event rules/targets, three existing logical challenges (with published v1/v2 definitions) plus five Variable Valley v1 challenges, separate hidden tests, progressive hint rows, and two achievements. It includes no player accounts, reference solutions, or learner submission source. The Variable Valley evaluator contract accepts function parameters and return values; stdin/`input()`/stdout challenge mode remains unsupported.
 
 ## PostgreSQL integration tests
 

@@ -25,7 +25,10 @@ namespace CodeQuest.Networking
         public Task<ApiResult<HealthDto>> GetHealthAsync(CancellationToken token) => GetAsync<HealthDto>("/healthz", false, token);
         public Task<ApiResult<ReadinessDto>> GetReadinessAsync(CancellationToken token) => GetAsync<ReadinessDto>("/readyz", false, token);
         public Task<ApiResult<PageDto<RegionDto>>> GetRegionsAsync(CancellationToken token) => GetAsync<PageDto<RegionDto>>("/api/v1/curriculum/regions", false, token);
-        public Task<ApiResult<PageDto<ObjectiveDto>>> GetObjectivesAsync(CancellationToken token) => GetAsync<PageDto<ObjectiveDto>>("/api/v1/curriculum/objectives", false, token);
+        public Task<ApiResult<PageDto<ObjectiveDto>>> GetObjectivesAsync(CancellationToken token) => GetObjectivesAsync(null, token);
+        public Task<ApiResult<PageDto<ObjectiveDto>>> GetObjectivesAsync(string regionSlug, CancellationToken token) =>
+            GetAsync<PageDto<ObjectiveDto>>("/api/v1/curriculum/objectives" +
+                (string.IsNullOrWhiteSpace(regionSlug) ? string.Empty : "?region_slug=" + Uri.EscapeDataString(regionSlug)), false, token);
         public Task<ApiResult<PageDto<QuestDto>>> GetQuestsAsync(CancellationToken token) => GetAsync<PageDto<QuestDto>>("/api/v1/quests", false, token);
         public Task<ApiResult<PageDto<ChallengeDto>>> GetChallengesAsync(CancellationToken token) => GetAsync<PageDto<ChallengeDto>>("/api/v1/challenges", false, token);
         public Task<ApiResult<ChallengeDto>> GetChallengeAsync(string slug, int version, CancellationToken token) =>

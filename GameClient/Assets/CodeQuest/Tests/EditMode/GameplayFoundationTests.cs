@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using CodeQuest.Gameplay.Challenges;
 using CodeQuest.Gameplay.Dialogue;
 using CodeQuest.Gameplay.Quests;
 using NUnit.Framework;
@@ -23,18 +24,82 @@ namespace CodeQuest.Tests.EditMode
             {
                 new DialogueNode { id = "start", line = "Choose", choices = new[] {
                     new DialogueChoice { label = "Always", nextNodeId = "end" },
+                    new DialogueChoice { label = "Start quest", nextNodeId = "end", condition = DialogueConditionKind.QuestNotStarted, questId = "q" },
                     new DialogueChoice { label = "After quest", nextNodeId = "end", condition = DialogueConditionKind.QuestCompleted, questId = "q" }
                 }},
                 new DialogueNode { id = "end", line = "Done" }
             };
             var session = new DialogueSession(new Conditions(false));
             Assert.IsTrue(session.Begin(definition));
-            Assert.AreEqual(1, session.VisibleChoices().Count);
+            Assert.AreEqual(2, session.VisibleChoices().Count);
             Assert.IsTrue(session.Choose(0));
             Assert.AreEqual("Done", session.Current.line);
             session.Cancel();
             Assert.IsFalse(session.IsOpen);
             Object.DestroyImmediate(definition);
+        }
+
+        [Test]
+        public void RuleBasedTutorRevealsHintsProgressivelyAndUsesErrorCategory()
+        {
+            var tutor = new RuleBasedTutorHintProvider();
+            var hints = new[] { "Store the input.", "Combine the values.", "Return the result." };
+            var first = tutor.GetHint(new TutorHintContext { PublishedHints = hints, HintLevel = 1 });
+            var second = tutor.GetHint(new TutorHintContext { PublishedHints = hints, HintLevel = 2 });
+            var afterError = tutor.GetHint(new TutorHintContext
+            {
+                PublishedHints = hints,
+                HintLevel = 1,
+                LastError = ChallengeErrorCategory.WrongAnswer
+            });
+            Assert.AreEqual("Store the input.", first);
+            Assert.AreEqual("Combine the values.", second);
+            StringAssert.Contains("Compare the required output", afterError);
+            StringAssert.Contains("Store the input.", afterError);
+        }
+
+        [Test]
+        public void LocalEditorCheckValidatesOnlyExpectedHeader()
+        {
+            Assert.IsTrue(ChallengeEditorRules.HasExpectedFunctionHeader("# lesson\ndef make_name_tag(name):\n    pass", "make_name_tag"));
+            Assert.IsFalse(ChallengeEditorRules.HasExpectedFunctionHeader("def other(name): return name", "make_name_tag"));
+            Assert.IsFalse(ChallengeEditorRules.HasExpectedFunctionHeader("", "make_name_tag"));
+        }
+
+        [Test]
+        public void ChallengeLifecycleOnlyTreatsServerPassedAsConfirmed()
+        {
+            Assert.AreEqual(SubmissionStatus.Queued, ChallengeStatusRules.FromServer("queued"));
+            Assert.AreEqual(SubmissionStatus.Running, ChallengeStatusRules.FromServer("running"));
+            Assert.AreEqual(SubmissionStatus.TimedOut, ChallengeStatusRules.FromServer("timed_out"));
+            Assert.AreEqual(SubmissionStatus.InternalError, ChallengeStatusRules.FromServer("unknown"));
+            Assert.IsTrue(ChallengeStatusRules.IsConfirmedPass(ChallengeStatusRules.FromServer("passed")));
+            Assert.IsFalse(ChallengeStatusRules.IsConfirmedPass(ChallengeStatusRules.FromServer("failed")));
+        }
+
+        [Test]
+        public void RegisterAfterProgressLoadRestoresMatchingServerRevision()
+        {
+            var persistence = new ConfirmingPersistence
+            {
+                LoadedItems = new List<QuestEventServerResult>
+                {
+                    new QuestEventServerResult
+                    {
+                        questSlug = "restored", questVersion = 1, status = "in_progress", revision = 4,
+                        objectiveProgress = new[] { new QuestObjectiveServerProgress { objectiveId = "a", completedCount = 1, requiredCount = 1, completed = true } }
+                    }
+                }
+            };
+            var service = new QuestService(persistence);
+            var quest = CreateQuest("restored", null, "a", QuestObjectiveKind.Interact, "switch", 1);
+            service.Register(quest);
+            var restored = service.Progress.Single();
+            Assert.AreEqual(4, restored.revision);
+            Assert.AreEqual(QuestStatus.Active, restored.status);
+            Assert.AreEqual(QuestSyncState.ServerConfirmed, restored.syncState);
+            Assert.IsTrue(restored.objectiveCounts.ContainsKey("a"));
+            Object.DestroyImmediate(quest);
         }
 
         [Test]
@@ -136,6 +201,7 @@ namespace CodeQuest.Tests.EditMode
             public Conditions(bool completed) => _completed = completed;
             public bool IsQuestActive(string questId) => false;
             public bool IsQuestCompleted(string questId) => _completed;
+            public bool IsQuestStarted(string questId) => _completed;
         }
 
         private sealed class ConfirmingPersistence : IQuestProgressPersistence
@@ -144,9 +210,10 @@ namespace CodeQuest.Tests.EditMode
             public string StatusLabel => "server authoritative";
             public QuestEventSubmissionResult FirstFailure;
             public TaskCompletionSource<QuestEventSubmissionResult> DeferredSubmission;
+            public List<QuestEventServerResult> LoadedItems = new List<QuestEventServerResult>();
             public readonly List<string> SubmittedIds = new List<string>();
             public Task<QuestProgressLoadResult> LoadAsync(CancellationToken cancellationToken) =>
-                Task.FromResult(QuestProgressLoadResult.Success(new List<QuestEventServerResult>()));
+                Task.FromResult(QuestProgressLoadResult.Success(LoadedItems));
             public Task<QuestEventSubmissionResult> SubmitAsync(string questSlug, QuestEventRequest request, CancellationToken cancellationToken)
             {
                 SubmittedIds.Add(request.eventId);

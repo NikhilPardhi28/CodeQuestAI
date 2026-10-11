@@ -45,10 +45,10 @@ def test_readiness_returns_retryable_error_when_database_is_down(app, client: Te
 def test_public_curriculum_and_quest_retrieval(client: TestClient) -> None:
     regions = client.get("/api/v1/curriculum/regions?limit=2")
     assert regions.status_code == 200
-    assert regions.json()["total"] == 3
+    assert regions.json()["total"] == 4
     assert [item["slug"] for item in regions.json()["items"]] == [
+        "variable-valley",
         "variable-vale",
-        "typeworks",
     ]
 
     objectives = client.get("/api/v1/curriculum/objectives", params={"region_slug": "typeworks"})

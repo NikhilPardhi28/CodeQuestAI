@@ -12,7 +12,11 @@ from BackendAPI.app.db.seed import seed_development
 from BackendAPI.app.db.session import build_engine
 from BackendAPI.app.schemas import QuestEventRequest
 from BackendAPI.app.services.quest_events import QuestEventError, submit_quest_event
-from BackendAPI.tests.postgres_support import reset_empty_postgres_migration_state
+from BackendAPI.tests.postgres_support import (
+    assert_empty_postgres_application_schema,
+    assert_postgres_migration_applied,
+    report_postgres_migration_state,
+)
 from sqlalchemy.engine import make_url
 from sqlalchemy.orm import sessionmaker
 
@@ -38,9 +42,18 @@ def test_postgres_serializes_concurrent_quest_revisions():
         pytest.fail("PostgreSQL concurrency tests require the isolated codequest_test database")
 
     engine = build_engine(database_url)
-    reset_empty_postgres_migration_state(engine)
     config = _config(database_url)
+    before_migration = report_postgres_migration_state(
+        stage="before_upgrade", engine=engine, config=config, test_database_url=database_url
+    )
+    assert_empty_postgres_application_schema(before_migration)
     command.upgrade(config, "head")
+    engine.dispose()
+    engine = build_engine(database_url)
+    after_migration = report_postgres_migration_state(
+        stage="after_upgrade", engine=engine, config=config, test_database_url=database_url
+    )
+    assert_postgres_migration_applied(after_migration)
     try:
         factory = sessionmaker(bind=engine, expire_on_commit=False)
         with factory() as session:

@@ -71,7 +71,7 @@ jobs:
         run: uv sync --locked --all-groups
       - name: Verify PostgreSQL migrations and quest concurrency
         run: >-
-          uv run python -m pytest -q
+          uv run python -m pytest -s -q
           BackendAPI/tests/test_migrations.py::test_postgres_migration_round_trip_when_configured
           BackendAPI/tests/test_quest_postgres_concurrency.py
           BackendAPI/tests/test_submission_postgres_concurrency.py

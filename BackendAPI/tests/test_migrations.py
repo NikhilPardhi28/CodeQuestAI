@@ -4,7 +4,11 @@ from pathlib import Path
 import pytest
 from alembic import command
 from alembic.config import Config
-from BackendAPI.tests.postgres_support import reset_empty_postgres_migration_state
+from BackendAPI.tests.postgres_support import (
+    assert_empty_postgres_application_schema,
+    assert_postgres_migration_applied,
+    report_postgres_migration_state,
+)
 from sqlalchemy import create_engine, inspect
 from sqlalchemy.engine import make_url
 
@@ -71,13 +75,20 @@ def test_postgres_migration_round_trip_when_configured() -> None:
             "PostgreSQL integration tests require an isolated database named codequest_test"
         )
 
+    config = _alembic_config(database_url)
     engine = create_engine(database_url)
-    reset_empty_postgres_migration_state(engine)
+    before_migration = report_postgres_migration_state(
+        stage="before_upgrade", engine=engine, config=config, test_database_url=database_url
+    )
+    assert_empty_postgres_application_schema(before_migration)
     engine.dispose()
 
-    config = _alembic_config(database_url)
     command.upgrade(config, "head")
     engine = create_engine(database_url)
+    after_migration = report_postgres_migration_state(
+        stage="after_upgrade", engine=engine, config=config, test_database_url=database_url
+    )
+    assert_postgres_migration_applied(after_migration)
     assert EXPECTED_TABLES.issubset(set(inspect(engine).get_table_names()))
     engine.dispose()
     command.downgrade(config, "base")

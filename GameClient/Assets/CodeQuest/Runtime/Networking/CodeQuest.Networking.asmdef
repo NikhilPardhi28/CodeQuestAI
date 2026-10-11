@@ -1,0 +1,14 @@
+{
+  "name": "CodeQuest.Networking",
+  "rootNamespace": "CodeQuest.Networking",
+  "references": ["CodeQuest.Core"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

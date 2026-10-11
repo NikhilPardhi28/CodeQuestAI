@@ -1,0 +1,14 @@
+{
+  "name": "CodeQuest.UI",
+  "rootNamespace": "CodeQuest.UI",
+  "references": ["CodeQuest.Core", "CodeQuest.Gameplay", "CodeQuest.Networking", "UnityEngine.UI"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

@@ -1,0 +1,74 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+.secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+.Python
+.venv/
+venv/
+env/
+pip-wheel-metadata/
+.pytest_cache/
+.ruff_cache/
+.uv-cache/
+.mypy_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Unity generated/editor files (retain Assets, Packages manifests and ProjectSettings)
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ibrary/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+MemoryCaptures/
+Recordings/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+.vs/
+
+# Node and frontend outputs
+node_modules/
+.next/
+coverage/
+*.tsbuildinfo
+
+# Local databases, logs, caches, outputs
+*.db
+*.sqlite
+*.sqlite3
+*.log
+.cache/
+artifacts/
+TestResults/
+*.trx
+
+# IDE/OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini

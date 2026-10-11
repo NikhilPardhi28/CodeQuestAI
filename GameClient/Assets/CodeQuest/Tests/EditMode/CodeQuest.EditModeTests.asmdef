@@ -1,0 +1,15 @@
+{
+  "name": "CodeQuest.EditModeTests",
+  "rootNamespace": "CodeQuest.Tests.EditMode",
+  "references": ["CodeQuest.Core", "CodeQuest.Gameplay", "CodeQuest.Networking"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "noEngineReferences": false
+}

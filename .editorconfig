@@ -1,0 +1,22 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+
+[*.{json,yml,yaml,toml,py,cs,ts,tsx,js,jsx}]
+indent_size = 4
+
+[*.md]
+indent_size = 2
+trim_trailing_whitespace = false
+
+[*.{sln,csproj,props,targets}]
+indent_size = 4
+
+[*.{png,jpg,jpeg,webp,fbx,blend,wav,mp3,ogg,asset,prefab,unity}]
+insert_final_newline = false

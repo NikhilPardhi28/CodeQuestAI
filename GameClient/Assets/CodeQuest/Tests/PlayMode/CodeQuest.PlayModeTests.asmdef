@@ -1,0 +1,15 @@
+{
+  "name": "CodeQuest.PlayModeTests",
+  "rootNamespace": "CodeQuest.Tests.PlayMode",
+  "references": ["CodeQuest.Core", "CodeQuest.Gameplay", "CodeQuest.Networking", "CodeQuest.UI"],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "noEngineReferences": false
+}

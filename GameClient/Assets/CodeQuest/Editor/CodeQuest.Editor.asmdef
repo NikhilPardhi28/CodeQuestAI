@@ -1,0 +1,14 @@
+{
+  "name": "CodeQuest.Editor",
+  "rootNamespace": "CodeQuest.Editor",
+  "references": ["CodeQuest.Core", "CodeQuest.Gameplay", "CodeQuest.Networking", "CodeQuest.UI", "Unity.RenderPipelines.Universal.Runtime"],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

@@ -1,0 +1,43 @@
+[project]
+name = "codequest-ai-backend"
+version = "0.1.0"
+description = "CodeQuest AI backend foundation"
+requires-python = "==3.11.*"
+dependencies = [
+    "alembic==1.15.2",
+    "fastapi==0.115.12",
+    "PyJWT[crypto]==2.15.0",
+    "psycopg[binary]==3.2.6",
+    "pydantic-settings==2.8.1",
+    "sqlalchemy==2.0.39",
+    "uvicorn[standard]==0.34.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx==0.28.1",
+    "pytest==8.3.5",
+    "ruff==0.11.2",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["BackendAPI/tests", "Tests/backend"]
+python_files = ["test_*.py"]
+addopts = "-ra --strict-markers"
+markers = [
+    "migration: exercises Alembic migrations against an isolated temporary database",
+    "postgres: requires CODEQUEST_TEST_DATABASE_URL pointing to an empty codequest_test database",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["BackendAPI", "AIService", "PythonExecutionService", "Tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["B008"] # FastAPI dependency injection uses Depends(...) as parameter defaults.
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

@@ -27,6 +27,7 @@ addopts = "-ra --strict-markers"
 markers = [
     "migration: exercises Alembic migrations against an isolated temporary database",
     "postgres: requires CODEQUEST_TEST_DATABASE_URL pointing to an empty codequest_test database",
+    "sandbox: executes learner-like source only in a disposable isolated Linux container",
 ]
 
 [tool.ruff]

@@ -1,6 +1,6 @@
 # CodeQuest AI architecture baseline
 
-**Status:** architecture baseline plus Milestones 5–9 foundations, 2026-10-11. The repository contains versioned API contracts, reversible migrations, server-authoritative quest/reward rules, the trusted-evaluation boundary, and a playable Unity hub with a data-driven Variable Valley slice. Unity compilation and EditMode/PlayMode suites were run under the installed editor. Real OIDC integration and production Python sandbox execution remain blocked/unverified; the documents also retain many future systems. `TBD` items are unresolved product/engineering choices; do not silently treat proposals as requirements.
+**Status:** architecture baseline plus Milestones 5–10 foundations, 2026-10-11. The repository contains versioned API contracts, reversible migrations, server-authoritative quest/reward rules, the trusted-evaluation boundary, a playable Unity hub with a data-driven Variable Valley slice, stricter OIDC configuration validation, and a Linux CI evaluator isolation job. Local Unity/backend checks pass; real OIDC integration, PostgreSQL concurrency, and execution inside the CI Linux sandbox remain blocked or unverified. Future systems remain in the roadmap. `TBD` items are unresolved product/engineering choices; do not silently treat proposals as requirements.
 
 ## Documents
 
@@ -18,7 +18,8 @@
 12. [Milestone 6 authoritative quest events](milestone-6-quest-events.md)
 13. [Milestone 8 runtime verification and security hardening](milestone-8-runtime-verification.md)
 14. [Milestone 9 playable coding quest vertical slice](milestone-9-vertical-slice.md)
-15. [Generated OpenAPI v1](api/openapi-v1.json) and [OpenAPI v2](api/openapi-v2.json)
+15. [Milestone 10 authenticated evaluation and progression](milestone-10-authenticated-evaluation.md)
+16. [Generated OpenAPI v1](api/openapi-v1.json) and [OpenAPI v2](api/openapi-v2.json)
 
 ## Proposed documentation manifest
 
@@ -38,7 +39,7 @@ Documentation/
 
 The initial baseline added root conventions/configuration, a pinned Python dependency project and `uv.lock`, validators, and CI. Later milestones added the nested Unity project, reusable gameplay foundation, FastAPI routes, SQLAlchemy models, two Alembic revisions, versioned quest rules, and tests. Python execution and dashboard packages remain future work. The active branch retains the existing Git history; do not rewrite prior checkpoints.
 
-Host tool discovery recorded Unity Editor 6000.3.19f1 at `C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Unity.exe`; its exact patch and Python line are recorded in ADR-0009 and project settings. Docker CLI is installed, but the Linux engine is not running in the Milestone 6 environment. Unity licensing and PostgreSQL integration remain environment gates for the current verification run.
+Host tool discovery recorded Unity Editor 6000.3.19f1 at `C:\Program Files\Unity\Hub\Editor\6000.3.19f1\Editor\Unity.exe`; its exact patch and Python line are recorded in ADR-0009 and project settings. Docker CLI is installed, but the Linux engine is not running in this environment. PostgreSQL and real OIDC provider integration remain environment gates. The CI workflow contains separately gated PostgreSQL and Linux evaluator jobs; their results must be read from an actual run before claiming those checks passed.
 
 ## Proposed component manifest
 

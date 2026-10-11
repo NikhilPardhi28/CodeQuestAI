@@ -19,7 +19,7 @@ uv run python -m uvicorn BackendAPI.app.main:app --reload
 
 ## Configuration
 
-Use typed settings sourced from environment variables. `CODEQUEST_` is the reserved environment prefix. Partial OIDC configuration fails fast; missing OIDC configuration leaves protected endpoints unavailable rather than enabling a bypass. Keep secrets out of logs, exception messages, telemetry, and client bundles.
+Use typed settings sourced from environment variables. `CODEQUEST_` is the reserved environment prefix. Partial OIDC configuration fails fast; configured issuer and JWKS endpoints require HTTPS, except loopback HTTP for local/development/test environments. The audience must be non-empty. Missing OIDC configuration leaves protected endpoints unavailable rather than enabling a bypass. The backend verifies RS256 signatures and the configured issuer/audience plus `exp`, `iat`, and `sub`; deterministic synthetic-issuer tests are not a substitute for a live identity provider. Keep secrets out of logs, exception messages, telemetry, and client bundles.
 
 ## API and persistence rules
 

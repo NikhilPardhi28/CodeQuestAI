@@ -34,7 +34,7 @@ The current adapter uses the legacy Unity Input Manager axes (`Horizontal`, `Ver
 
 ## API configuration and startup
 
-The editor setup command creates `Assets/Resources/ApiClientSettings.asset` with the local default `http://127.0.0.1:8000`; edit its Base URL for the environment. This works when the Unity Editor and backend share the same Windows host. A deployed client must use its reachable HTTPS service URL; do not assume `localhost` identifies the server from another machine. This asset contains no credential. The API client never sends profile requests without an `IAccessTokenProvider` token; the current composition uses an honest unauthenticated provider because the OIDC provider remains unselected.
+The editor setup command creates `Assets/Resources/ApiClientSettings.asset` with the local default `http://127.0.0.1:8000`; edit its Base URL for the environment. This works when the Unity Editor and backend share the same Windows host. A deployed client must use its reachable HTTPS service URL; do not assume `localhost` identifies the server from another machine. This asset contains no credential. The API client never sends profile requests without an `IAccessTokenProvider` token; the current composition uses an honest unauthenticated provider because the OIDC provider remains unselected. Once selected, the desktop game client must use the provider's public/native Authorization Code flow with PKCE and must not contain a client secret. No browser login or token acquisition is implemented until a provider, redirect registration, and API audience are configured and reviewable.
 
 From repository root, start the backend and PostgreSQL as described in [backend setup](../BackendAPI/README.md) and [database setup](../Database/README.md):
 
@@ -49,7 +49,7 @@ The Unity client calls the public `/healthz`, `/readyz`, and v1 catalog routes p
 
 ## Tests
 
-After opening the project and allowing compilation, use **Window → General → Test Runner**. Run EditMode and PlayMode suites. EditMode includes movement, quest/dialogue, tutor hint progression, editor format checks, challenge lifecycle, and server progress restoration. PlayMode includes movement, interface interaction, portal activation, hub setup, and an opt-in live catalog/auth check. Offline M9 results were 12 EditMode passed and 6 PlayMode passed with the live API test skipped; a separate live PlayMode run passed all 7 tests against the local SQLite-backed API. Python results are recorded in the M9 report.
+After opening the project and allowing compilation, use **Window → General → Test Runner**. Run EditMode and PlayMode suites. EditMode includes movement, quest/dialogue, tutor hint progression, editor format checks, challenge lifecycle, and server progress restoration. PlayMode includes movement, interface interaction, portal activation, hub setup, and an opt-in live catalog/auth check. M10 revalidation on Unity 6000.3.19f1 passed compilation, 12 EditMode tests, and 6 offline PlayMode tests; the opt-in API/auth test was ignored without its live test environment. See the [Milestone 10 report](../Documentation/milestone-10-authenticated-evaluation.md).
 
 ## Limits and next milestone
 

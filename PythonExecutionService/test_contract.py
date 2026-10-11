@@ -147,6 +147,28 @@ def test_launcher_rejects_mutable_or_malformed_image_digest(job, monkeypatch):
         run_isolated_job(job)
 
 
+def test_local_content_digest_is_allowed_only_in_nonproduction(job, monkeypatch):
+    import docker_runner
+
+    class FakeProcess:
+        returncode = 0
+
+        def __init__(self, _command, **_kwargs):
+            pass
+
+        def communicate(self, input=None, timeout=None):
+            return _fake_result(job), None
+
+    monkeypatch.setenv("CODEQUEST_EVALUATOR_IMAGE", "sha256:" + "c" * 64)
+    monkeypatch.setenv("CODEQUEST_ENV", "ci")
+    monkeypatch.setattr(docker_runner.subprocess, "Popen", FakeProcess)
+    assert run_isolated_job(job)["submissionId"] == job["submissionId"]
+
+    monkeypatch.setenv("CODEQUEST_ENV", "production")
+    with pytest.raises(EvaluationUnavailable, match="immutable evaluator image digest"):
+        run_isolated_job(job)
+
+
 def test_worker_job_requires_digest_matching_source(job):
     job["sourceDigest"] = "0" * 64
     with pytest.raises(ValueError, match="source digest mismatch"):

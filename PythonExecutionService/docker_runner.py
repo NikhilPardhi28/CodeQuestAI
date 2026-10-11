@@ -14,6 +14,7 @@ MAX_SOURCE_BYTES = 32 * 1024
 MAX_JOB_BYTES = 96 * 1024
 MAX_DIAGNOSTIC_BYTES = 64 * 1024
 IMAGE_DIGEST = re.compile(r"^.+@sha256:[0-9a-f]{64}$")
+LOCAL_IMAGE_ID = re.compile(r"^sha256:[0-9a-f]{64}$")
 
 
 class EvaluationUnavailable(RuntimeError):
@@ -131,7 +132,17 @@ def _kill_container(name: str) -> None:
 def run_isolated_job(raw_job: object) -> dict[str, object]:
     job = validate_job(raw_job)
     image = os.environ.get("CODEQUEST_EVALUATOR_IMAGE", "")
-    if not IMAGE_DIGEST.fullmatch(image):
+    # CI can address the just-built disposable image by its immutable content ID;
+    # deployed workers must use a repository-qualified registry digest.
+    local_image_id_allowed = os.environ.get("CODEQUEST_ENV", "").lower() in {
+        "local",
+        "test",
+        "ci",
+    }
+    if not (
+        IMAGE_DIGEST.fullmatch(image)
+        or (local_image_id_allowed and LOCAL_IMAGE_ID.fullmatch(image))
+    ):
         raise EvaluationUnavailable("an immutable evaluator image digest is required")
     definition = job["definition"]
     name = "cq-eval-" + uuid.uuid4().hex[:20]

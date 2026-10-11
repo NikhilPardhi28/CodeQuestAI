@@ -32,6 +32,35 @@ class Settings(BaseSettings):
                 "CODEQUEST_AUTH_ISSUER, CODEQUEST_AUTH_AUDIENCE, and "
                 "CODEQUEST_AUTH_JWKS_URL must be configured together"
             )
+        if all(configured):
+            if not self.auth_audience or self.auth_audience != self.auth_audience.strip():
+                raise ValueError("CODEQUEST_AUTH_AUDIENCE must be non-empty and trimmed")
+            for name, value in (
+                ("CODEQUEST_AUTH_ISSUER", self.auth_issuer),
+                ("CODEQUEST_AUTH_JWKS_URL", self.auth_jwks_url),
+            ):
+                parsed = urlsplit(value or "")
+                local_http = self.env.lower() in {
+                    "local",
+                    "development",
+                    "test",
+                } and parsed.hostname in {"localhost", "127.0.0.1", "::1"}
+                if (
+                    not parsed.hostname
+                    or parsed.username
+                    or parsed.password
+                    or parsed.fragment
+                    or parsed.scheme != "https"
+                    and not (parsed.scheme == "http" and local_http)
+                ):
+                    raise ValueError(
+                        f"{name} must use HTTPS "
+                        "(HTTP is allowed only for loopback in local/test environments)"
+                    )
+                if value != value.strip():
+                    raise ValueError(f"{name} must be trimmed")
+                if name == "CODEQUEST_AUTH_ISSUER" and parsed.query:
+                    raise ValueError("CODEQUEST_AUTH_ISSUER cannot include a query")
         if (self.evaluation_worker_url is None) != (self.evaluation_worker_token is None):
             raise ValueError(
                 "CODEQUEST_EVALUATION_WORKER_URL and CODEQUEST_EVALUATION_WORKER_TOKEN "

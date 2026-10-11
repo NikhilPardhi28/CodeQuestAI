@@ -24,6 +24,7 @@ dev = [
 testpaths = ["BackendAPI/tests", "PythonExecutionService", "Tests/backend"]
 python_files = ["test_*.py"]
 addopts = "-ra --strict-markers"
+faulthandler_timeout = 30
 markers = [
     "migration: exercises Alembic migrations against an isolated temporary database",
     "postgres: requires CODEQUEST_TEST_DATABASE_URL pointing to an empty codequest_test database",

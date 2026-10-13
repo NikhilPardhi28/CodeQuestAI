@@ -1,0 +1,84 @@
+\appendix
+\chapter{System Environment and Deployment Guide}
+
+\section{Local Development Prerequisites}
+The CodeQuest AI platform is engineered using modern, open-source web and game development technologies. To configure a complete local development node, the following dependencies must be provisioned:
+
+\begin{itemize}
+    \item \textbf{Operating System:} Windows 10/11 (64-bit), Ubuntu 22.04 LTS, or macOS 13+.
+    \item \textbf{Game Engine:} Unity Editor Version 6000.0.x (Unity 6 LTS) with Universal Render Pipeline (URP) package.
+    \item \textbf{Backend Runtime:} Python 3.11+ with \texttt{pip} package manager.
+    \item \textbf{Container Runtime:} Docker Desktop 4.25+ or Docker Engine with Docker Compose v2.
+    \item \textbf{Database:} PostgreSQL 15+ (provisioned via Docker container).
+    \item \textbf{Identity Provider:} Keycloak 23.0+ running on port 8080 (optional for local guest testing).
+\end{itemize}
+
+\section{Service Orchestration via Docker Compose}
+The backend infrastructure is orchestrated using Docker Compose. Listing~\ref{lst:compose_spec} illustrates the primary service definitions for the PostgreSQL database, FastAPI gateway, and isolated execution worker.
+
+\begin{lstlisting}[language=bash, caption={Docker Compose Service Configuration}, label={lst:compose_spec}]
+# Start core persistence and IAM services
+docker compose -f docker-compose.infra.yml up -d postgres keycloak
+
+# Initialize database schema migrations
+alembic upgrade head
+
+# Build the isolated Python evaluator container
+docker build -t python-sandbox:latest ./PythonExecutionService/sandbox
+
+# Launch backend API gateway and execution service
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+\end{lstlisting}
+
+\chapter{API Endpoint Specifications}
+
+\section{Challenge and Submission Interfaces}
+The CodeQuest AI application gateway exposes RESTful JSON endpoints documented under OpenAPI (Swagger) specifications. Table~\ref{tab:api_endpoints} outlines key API routes.
+
+\begin{table}[htbp]
+\centering
+\caption{Key REST API Endpoints in CodeQuest AI Gateway}
+\label{tab:api_endpoints}
+\small
+\begin{tabularx}{\textwidth}{lp{0.25\textwidth}p{0.2\textwidth}X}
+\toprule
+\textbf{Method} & \textbf{Endpoint Path} & \textbf{Auth Required} & \textbf{Description} \\
+\midrule
+\texttt{GET} & \path{/api/v1/health} & None & Returns service health status and database connectivity. \\
+\midrule
+\texttt{GET} & \path{/api/v1/challenges} & Bearer JWT / Guest & Lists available programming challenges categorized by difficulty. \\
+\midrule
+\texttt{GET} & \path{/api/v1/challenges/{id}} & Bearer JWT / Guest & Retrieves challenge prompt, starter code, and visible test cases. \\
+\midrule
+\texttt{POST} & \path{/api/v1/submissions} & Bearer JWT / Guest & Submits learner code for isolated evaluation and test verification. \\
+\midrule
+\texttt{GET} & \path{/api/v1/users/me/progress} & Bearer JWT & Retrieves completed challenge IDs, total score, and completion timestamps. \\
+\midrule
+\texttt{POST} & \path{/internal/evaluate} & Shared Secret Token & Inter-service endpoint invoked by gateway to dispatch Docker container run. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Sample Submission Payload and Response}
+Listing~\ref{lst:submission_json} provides a representative HTTP request and response interaction between the Unity client HUD and the FastAPI backend.
+
+\begin{lstlisting}[language=bash, caption={Sample Code Submission Request and Evaluator Response Payload}, label={lst:submission_json}]
+# POST /api/v1/submissions
+{
+  "challenge_id": "ch_var_01",
+  "language": "python",
+  "code": "player_name = 'Hero'\nlevel = 1\nprint(f'{player_name} is level {level}')"
+}
+
+# HTTP 200 OK Response
+{
+  "submission_id": "sub_9841f32a",
+  "status": "PASSED",
+  "tests_total": 3,
+  "tests_passed": 3,
+  "execution_time_ms": 342,
+  "stdout": "Hero is level 1\n",
+  "stderr": "",
+  "feedback": "Outstanding! All variable assignments and print assertions verified successfully."
+}
+\end{lstlisting}

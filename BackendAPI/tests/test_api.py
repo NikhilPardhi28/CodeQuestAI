@@ -99,7 +99,15 @@ def test_public_not_found_and_invalid_pagination_use_error_envelope(client: Test
     assert invalid.json()["code"] == "request_validation_error"
 
 
-def test_player_routes_fail_closed_without_auth_configuration(client: TestClient) -> None:
+def test_player_routes_fail_closed_without_auth_configuration(app, client: TestClient) -> None:
+    # Ignore a developer's local .env so this test always exercises the
+    # intentionally unconfigured-auth case, even when local OIDC is enabled.
+    app.dependency_overrides[get_settings] = lambda: Settings(
+        _env_file=None,
+        auth_issuer=None,
+        auth_audience=None,
+        auth_jwks_url=None,
+    )
     response = client.get("/api/v1/me")
     assert response.status_code == 503
     assert response.json()["code"] == "authentication_not_configured"

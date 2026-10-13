@@ -16,6 +16,10 @@ namespace CodeQuest.Gameplay.Player
         private Transform _orientation;
         private float _verticalVelocity;
         private float _turnVelocity;
+        private Animator _animator;
+        private static readonly int SpeedParam = Animator.StringToHash("Speed");
+        private static readonly int JumpParam = Animator.StringToHash("Jump");
+        private static readonly int IsGroundedParam = Animator.StringToHash("IsGrounded");
 
         public void Initialize(IGameInput input, Transform cameraOrientation)
         {
@@ -23,7 +27,16 @@ namespace CodeQuest.Gameplay.Player
             _orientation = cameraOrientation;
         }
 
-        private void Awake() => _controller = GetComponent<CharacterController>();
+        public void BindAnimator(Animator animator)
+        {
+            _animator = animator;
+        }
+
+        private void Awake()
+        {
+            _controller = GetComponent<CharacterController>();
+            if (_animator == null) _animator = GetComponentInChildren<Animator>();
+        }
 
         private void Update()
         {
@@ -39,15 +52,28 @@ namespace CodeQuest.Gameplay.Player
                     transform.eulerAngles.y, targetAngle, ref _turnVelocity, turnSmoothTime), 0f);
             }
 
+            var jumpedThisFrame = false;
             if (_controller.isGrounded)
             {
                 if (_verticalVelocity < 0f) _verticalVelocity = -2f;
-                if (_input.JumpPressed) _verticalVelocity = MovementRules.JumpVelocity(jumpHeight, gravity);
+                if (_input.JumpPressed)
+                {
+                    _verticalVelocity = MovementRules.JumpVelocity(jumpHeight, gravity);
+                    jumpedThisFrame = true;
+                }
             }
             _verticalVelocity -= gravity * Time.deltaTime;
             var speed = MovementRules.SelectSpeed(_input.RunHeld, walkSpeed, runSpeed);
             var displacement = direction * speed + Vector3.up * _verticalVelocity;
             _controller.Move(displacement * Time.deltaTime);
+
+            if (_animator != null)
+            {
+                var horizontalSpeed = direction.sqrMagnitude > 0.001f ? speed : 0f;
+                _animator.SetFloat(SpeedParam, horizontalSpeed);
+                _animator.SetBool(IsGroundedParam, _controller.isGrounded);
+                if (jumpedThisFrame) _animator.SetTrigger(JumpParam);
+            }
         }
     }
 }

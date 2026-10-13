@@ -103,6 +103,73 @@ namespace CodeQuest.Tests.EditMode
         }
 
         [Test]
+        public async Task RefreshAfterSignInRestoresServerSnapshot()
+        {
+            var persistence = new ConfirmingPersistence { LoadFailureMessage = "authentication_required" };
+            var service = new QuestService(persistence);
+            var quest = CreateQuest("restored-after-sign-in", null, "a", QuestObjectiveKind.Interact, "switch", 1);
+            service.Register(quest);
+            Assert.AreEqual(QuestSyncState.Failed, service.Progress.Single().syncState);
+
+            persistence.LoadFailureMessage = null;
+            persistence.LoadedItems = new List<QuestEventServerResult>
+            {
+                new QuestEventServerResult
+                {
+                    questSlug = "restored-after-sign-in", questVersion = 1, status = "in_progress", revision = 7,
+                    objectiveProgress = new[] { new QuestObjectiveServerProgress { objectiveId = "a", completedCount = 1, requiredCount = 1, completed = true } }
+                }
+            };
+
+            Assert.IsTrue(await service.RefreshProgressAsync(CancellationToken.None));
+            var restored = service.Progress.Single();
+            Assert.AreEqual(7, restored.revision);
+            Assert.AreEqual(QuestStatus.Active, restored.status);
+            Assert.AreEqual(QuestSyncState.ServerConfirmed, restored.syncState);
+            Assert.AreEqual(1, restored.objectiveCounts["a"]);
+            Object.DestroyImmediate(quest);
+        }
+
+        [Test]
+        public async Task FailedProgressRefreshDoesNotClaimSynchronization()
+        {
+            var persistence = new ConfirmingPersistence { LoadFailureMessage = "authentication_required" };
+            var service = new QuestService(persistence);
+            var quest = CreateQuest("refresh-failure", null, "a", QuestObjectiveKind.Interact, "switch", 1);
+            service.Register(quest);
+            persistence.LoadFailureMessage = "authentication_required";
+
+            Assert.IsFalse(await service.RefreshProgressAsync(CancellationToken.None));
+            Assert.AreEqual(QuestSyncState.Failed, service.Progress.Single().syncState);
+            StringAssert.Contains("authentication_required", service.Progress.Single().lastError);
+            Object.DestroyImmediate(quest);
+        }
+
+        [Test]
+        public async Task SuccessfulProgressRefreshRetriesPendingEventWithSameIdempotencyKey()
+        {
+            var persistence = new ConfirmingPersistence
+            {
+                FirstFailure = QuestEventSubmissionResult.Failure("authentication_required", "sign in", false)
+            };
+            var service = new QuestService(persistence);
+            var quest = CreateQuest("retry-after-sign-in", null, "a", QuestObjectiveKind.Interact, "switch", 1);
+            service.Register(quest);
+            const string eventId = "82ad080a-455b-4d18-8273-a98ce755d94d";
+
+            Assert.IsTrue(service.RecordEvent("retry-after-sign-in", eventId, QuestObjectiveKind.Interact, "switch"));
+            Assert.AreEqual(QuestSyncState.Failed, service.Progress.Single().syncState);
+            Assert.AreEqual(1, persistence.SubmittedIds.Count);
+
+            Assert.IsTrue(await service.RefreshProgressAsync(CancellationToken.None));
+            Assert.AreEqual(2, persistence.SubmittedIds.Count);
+            Assert.AreEqual(eventId, persistence.SubmittedIds[0]);
+            Assert.AreEqual(eventId, persistence.SubmittedIds[1]);
+            Assert.AreEqual(QuestSyncState.ServerConfirmed, service.Progress.Single().syncState);
+            Object.DestroyImmediate(quest);
+        }
+
+        [Test]
         public void QuestProgressChangesOnlyAfterServerConfirmation()
         {
             var persistence = new ConfirmingPersistence();
@@ -209,11 +276,14 @@ namespace CodeQuest.Tests.EditMode
             public bool IsCloudBacked => true;
             public string StatusLabel => "server authoritative";
             public QuestEventSubmissionResult FirstFailure;
+            public string LoadFailureMessage;
             public TaskCompletionSource<QuestEventSubmissionResult> DeferredSubmission;
             public List<QuestEventServerResult> LoadedItems = new List<QuestEventServerResult>();
             public readonly List<string> SubmittedIds = new List<string>();
             public Task<QuestProgressLoadResult> LoadAsync(CancellationToken cancellationToken) =>
-                Task.FromResult(QuestProgressLoadResult.Success(LoadedItems));
+                Task.FromResult(LoadFailureMessage == null
+                    ? QuestProgressLoadResult.Success(LoadedItems)
+                    : QuestProgressLoadResult.Failure(LoadFailureMessage));
             public Task<QuestEventSubmissionResult> SubmitAsync(string questSlug, QuestEventRequest request, CancellationToken cancellationToken)
             {
                 SubmittedIds.Add(request.eventId);

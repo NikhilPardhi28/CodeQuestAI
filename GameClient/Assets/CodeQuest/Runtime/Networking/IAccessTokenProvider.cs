@@ -1,18 +1,26 @@
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace CodeQuest.Networking
 {
     /// <summary>Provides short-lived OIDC access tokens from a configured identity adapter.</summary>
     public interface IAccessTokenProvider
     {
-        bool TryGetAccessToken(out string accessToken);
+        Task<string> GetAccessTokenAsync(CancellationToken cancellationToken);
     }
 
-    /// <summary>Honest default until an OIDC provider is selected and configured.</summary>
+    public interface IInteractiveAuthenticationProvider : IAccessTokenProvider
+    {
+        bool IsSignedIn { get; }
+        Task<bool> SignInAsync(CancellationToken cancellationToken);
+    }
+
+    /// <summary>Fail-closed fallback when no supported platform identity adapter is composed.</summary>
     public sealed class UnauthenticatedTokenProvider : IAccessTokenProvider
     {
-        public bool TryGetAccessToken(out string accessToken)
+        public Task<string> GetAccessTokenAsync(CancellationToken cancellationToken)
         {
-            accessToken = null;
-            return false;
+            return Task.FromResult<string>(null);
         }
     }
 }

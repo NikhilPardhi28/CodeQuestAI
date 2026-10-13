@@ -1,0 +1,78 @@
+\chapter{Conclusion and Future Scope}
+\label{ch:conclusion}
+
+\section{Summary of Work Completed}
+The primary aim of the \textbf{CodeQuest AI} major project was to design, implement, and evaluate an interactive, game-based learning platform for Python programming that merges a 3D role-playing game environment with a cloud-native, secure code execution pipeline. Over the development lifecycle, this objective was translated into a demonstrable, integrated system comprising three core tiers:
+
+\begin{enumerate}
+    \item \textbf{A 3D Interactive Client (Unity 6 / URP):} Developed as a responsive desktop application featuring custom low-poly environmental assets, an active third-person character controller with dynamic ground-snapping and jump mechanics, NPC dialogue interactions (e.g., Guide Mira), and a modal Python code editor HUD. Crucially, client-side rendering was hardened against platform-specific font missing-glyph faults by integrating embedded TrueType typography.
+    \item \textbf{A Microservices Application Gateway (FastAPI / PostgreSQL):} Implemented an asynchronous RESTful backend that handles user authentication via Keycloak (OAuth2 / OIDC), manages challenge curriculum data across pedagogical categories (Variables, Conditionals, Loops, Functions), coordinates with the execution cluster, and maintains persistent submission records and progress state in PostgreSQL.
+    \item \textbf{An Isolated Sandbox Execution Service (Docker):} Designed an asynchronous worker service that executes learner-submitted Python code inside hermetic, non-root Docker containers. The sandbox enforces strict cgroup resource constraints (256\,MB RAM, 1.0 vCPU) and a 5.0-second wall-clock timeout to completely neutralize security threats such as arbitrary code execution, denial-of-service loops, fork bombs, and host filesystem tampering.
+\end{enumerate}
+
+Comprehensive verification confirmed that the end-to-end loop—from in-game challenge activation, in-game code editing, and secure network dispatch to containerized execution, unit test verification, and database state updates—operates synchronously with sub-second response times ($\approx 410$\,ms median latency), providing immediate pedagogical reinforcement.
+
+\section{Evaluation Against Objectives}
+Table~\ref{tab:objective_eval} provides a systematic evaluation of the delivered system against the functional and educational objectives established at the project outset.
+
+\begin{table}[htbp]
+\centering
+\caption{System Evaluation Against Stated Project Objectives}
+\label{tab:objective_eval}
+\small
+\begin{tabularx}{\textwidth}{p{0.06\textwidth}p{0.34\textwidth}p{0.18\textwidth}X}
+\toprule
+\textbf{No.} & \textbf{Stated Project Objective} & \textbf{Status} & \textbf{Verification Evidence} \\
+\midrule
+O1 & Develop an immersive 3D RPG environment in Unity 6 for programming exploration. & \textbf{Achieved} & Functional 3D hub scene (Variable Valley) with character motor, collision physics, and NPC interactions. \\
+\midrule
+O2 & Build an in-game Python code editor HUD with execution feedback. & \textbf{Achieved} & Unity modal editor with custom text rendering, multi-line editing, submit trigger, and execution output terminal. \\
+\midrule
+O3 & Implement an isolated, secure code execution service preventing host exploits. & \textbf{Achieved} & Docker container sandbox with cgroup isolation, non-root user, disabled networking, and strict timeout enforcement. \\
+\midrule
+O4 & Establish a RESTful backend API with relational state persistence. & \textbf{Achieved} & FastAPI application with PostgreSQL database models, migration schemas, and automated test coverage. \\
+\midrule
+O5 & Integrate standards-compliant OAuth2 / OIDC authentication. & \textbf{Partially Achieved} & Keycloak service operational; automated token generation verified; headless browser PKCE interactive loop pending client auto-launch. \\
+\midrule
+O6 & Deploy adaptive AI tutoring with LLM-driven feedback and Knowledge Tracing. & \textbf{Planned (Future)} & Architectural design completed; empirical literature survey compiled; full LLM inference integration deferred to future phase. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Limitations of the Current Work}
+While the core architecture has been successfully validated, several technical and scope constraints must be explicitly acknowledged:
+\begin{enumerate}
+    \item \textbf{Curriculum Breadth:} The current game world (Variable Valley) contains introductory programming challenges focusing on variable assignment, type conversions, and simple logic. More advanced modules—such as object-oriented design, dynamic programming, and file I/O—are designed in schema but not yet implemented as dedicated 3D interactive biomes.
+    \item \textbf{Single-Player Scope:} The existing Unity client is strictly a single-player desktop client. Multiplayer co-op challenges, peer debugging, and competitive real-time algorithm contests remain outside the present implementation scope.
+    \item \textbf{Heuristic vs. Generative Guidance:} In the current deployment, execution errors return Python standard traceback messages and predefined hint strings. Dynamic, contextual LLM tutoring (e.g., via RAG grounded on student history) is architected but not active in the live gameplay loop.
+    \item \textbf{Headless Authentication Integration:} While the backend validates standard Bearer JWTs, the standalone desktop game client utilizes guest session fallback in offline/standalone mode to prevent blocking learners when the external Identity Provider is unreachable.
+\end{enumerate}
+
+\section{Future Research and Development Scope}
+The extensible, decoupled microservice architecture of CodeQuest AI establishes a robust foundation for extensive future enhancements:
+
+\subsection{Phase 1: Multi-Agent LLM Tutoring and Dynamic RAG}
+The immediate priority for post-degree development is activating the intelligent tutoring layer. Drawing on the empirical findings of Liu et al.~\cite{liu2025lpitutor} and Li et al.~\cite{li2025tutorllm}, we plan to deploy a dual-agent architecture:
+\begin{itemize}
+    \item \textbf{Socratic Mentor Agent:} Rather than presenting raw solutions, the mentor analyzes the student's AST and execution traceback, posing guided questions that steer the learner toward self-regulated error correction~\cite{ge2025srlagent}.
+    \item \textbf{Pedagogical Retriever (RAG):} A vector database (ChromaDB) storing curated programming textbook excerpts, official Python documentation, and classroom lecture notes will ground LLM generations, suppressing hallucination rates below the 5\% threshold demonstrated in recent literature.
+\end{itemize}
+
+\subsection{Phase 2: Curriculum Expansion and Biome Diversity}
+The world map will expand beyond Variable Valley to encompass diverse thematic zones corresponding to university curriculum syllabi:
+\begin{itemize}
+    \item \emph{Conditionals Canyon:} Focuses on complex boolean branching and nested decision structures.
+    \item \emph{Loop Lagoon:} Interactive temporal challenges involving \texttt{while} loops, list traversals, and recursion.
+    \item \emph{Function Fortress:} Architectural challenges requiring functional decomposition, scope management, and unit test authoring.
+    \item \emph{Data Structure Dungeon:} Traversal of procedural mazes represented as linked lists, binary trees, and graph topologies.
+\end{itemize}
+
+\subsection{Phase 3: Multiplayer Collaborative Coding and Competitive Arenas}
+Leveraging Unity's Netcode for GameObjects or Mirror networking, CodeQuest AI will support synchronous multiplayer modes:
+\begin{itemize}
+    \item \textbf{Pair Programming Dungeons:} Two players must synchronize code modules (e.g., producer-consumer algorithms) to solve spatial puzzle doors simultaneously.
+    \item \textbf{Code Arena Battles:} PvP algorithm showdowns where code efficiency (Big-O execution time and memory footprint) dictates damage multipliers in real-time boss battles.
+\end{itemize}
+
+\subsection{Phase 4: Affective Computing and Multimodal Engagement Tracing}
+Integrating student facial expression recognition or typing cadence analysis to gauge cognitive frustration and flow state, enabling the game engine to dynamically adjust challenge difficulty and provide encouragement before learner drop-off occurs.

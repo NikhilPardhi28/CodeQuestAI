@@ -239,21 +239,57 @@ namespace CodeQuest.Gameplay.Quests
 
         public async Task<bool> RefreshProgressAsync(CancellationToken cancellationToken)
         {
-            var result = await _persistence.LoadAsync(cancellationToken);
-            if (!result.IsSuccess) return false;
-            _loadSucceeded = true;
-            _loadedServerStates.Clear();
-            foreach (var serverProgress in result.Items ?? Array.Empty<QuestEventServerResult>())
+            try
             {
-                if (serverProgress == null) continue;
-                _loadedServerStates[serverProgress.questSlug] = serverProgress;
-                if (_progress.TryGetValue(serverProgress.questSlug, out var local) && local.version == serverProgress.questVersion)
+                var result = await _persistence.LoadAsync(cancellationToken);
+                if (!result.IsSuccess)
                 {
-                    ApplyServerState(local, serverProgress);
+                    MarkRefreshFailed(result.ErrorMessage);
+                    return false;
+                }
+                _loadSucceeded = true;
+                _loadError = null;
+                _loadedServerStates.Clear();
+                foreach (var serverProgress in result.Items ?? Array.Empty<QuestEventServerResult>())
+                {
+                    if (serverProgress == null) continue;
+                    _loadedServerStates[serverProgress.questSlug] = serverProgress;
+                    if (_progress.TryGetValue(serverProgress.questSlug, out var local) && local.version == serverProgress.questVersion)
+                    {
+                        ApplyServerState(local, serverProgress);
+                        Changed?.Invoke(local);
+                    }
+                }
+                foreach (var local in _progress.Values)
+                {
+                    if (_loadedServerStates.TryGetValue(local.questId, out var serverState) &&
+                        serverState.questVersion == local.version) continue;
+                    local.syncState = QuestSyncState.ServerConfirmed;
+                    local.lastError = null;
                     Changed?.Invoke(local);
                 }
+                StartWorker();
+                return true;
             }
-            return true;
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            catch (Exception)
+            {
+                MarkRefreshFailed("Quest progress could not be synchronized. Please retry.");
+                return false;
+            }
+        }
+
+        private void MarkRefreshFailed(string message)
+        {
+            _loadSucceeded = false;
+            _loadError = string.IsNullOrWhiteSpace(message) ? "Quest progress could not be synchronized." : message;
+            foreach (var progress in _progress.Values)
+            {
+                if (progress.syncState != QuestSyncState.ServerConfirmed)
+                    progress.syncState = _persistence.IsCloudBacked ? QuestSyncState.Failed : QuestSyncState.LocalOnly;
+                progress.lastError = _loadError;
+                Changed?.Invoke(progress);
+            }
         }
 
         public bool IsQuestActive(string questId) => _progress.TryGetValue(questId, out var progress) &&

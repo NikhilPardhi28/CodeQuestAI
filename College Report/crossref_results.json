@@ -1,0 +1,1479 @@
+{
+  "TutorLLM": {
+    "query_title": "TutorLLM: Customizing Learning Recommendations with Knowledge Tracing and Retrieval-Augmented Generation",
+    "found_title": "TutorLLM: Customizing Learning Recommendations with\u00a0Knowledge Tracing and\u00a0Retrieval-Augmented Generation",
+    "doi": "10.1007/978-3-032-05005-2_8",
+    "container": "Lecture Notes in Computer Science",
+    "year": 2025,
+    "author": [
+      {
+        "ORCID": "https://orcid.org/0000-0003-3560-3461",
+        "authenticated-orcid": false,
+        "given": "Zhaoxing",
+        "family": "Li",
+        "sequence": "first",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0002-0901-8587",
+        "authenticated-orcid": false,
+        "given": "Jindi",
+        "family": "Wang",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0003-3158-6801",
+        "authenticated-orcid": false,
+        "given": "Wen",
+        "family": "Gu",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0002-4468-6193",
+        "authenticated-orcid": false,
+        "given": "Vahid",
+        "family": "Yazdanpanah",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0001-7119-3207",
+        "authenticated-orcid": false,
+        "given": "Lei",
+        "family": "Shi",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0002-1454-8822",
+        "authenticated-orcid": false,
+        "given": "Alexandra I.",
+        "family": "Cristea",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0003-2651-9620",
+        "authenticated-orcid": false,
+        "given": "Sarah",
+        "family": "Kiden",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0003-2858-8857",
+        "authenticated-orcid": false,
+        "given": "Sebastian",
+        "family": "Stein",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      }
+    ]
+  },
+  "LPITutor": {
+    "query_title": "LPITutor: An LLM-Based Personalized Intelligent Tutoring System Using RAG and Prompt Engineering",
+    "found_title": "LPITutor: an LLM based personalized intelligent tutoring system using RAG and prompt engineering",
+    "doi": "10.7717/peerj-cs.2991",
+    "container": "PeerJ Computer Science",
+    "year": 2025,
+    "author": [
+      {
+        "given": "Zhensheng",
+        "family": "Liu",
+        "sequence": "first",
+        "affiliation": [
+          {
+            "name": "School of Educational Sciences, Bohai University, Jinzhou, Liaoning, China"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Prateek",
+        "family": "Agrawal",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "Computer Science and Engineering, Lovely Professional University, Phagwara, Punjab, India"
+          },
+          {
+            "name": "Faculty of Engineering and Technology, Shree Guru Gobind Singh Tricentenary University, Gurugram, Haryana, India"
+          },
+          {
+            "name": "INTI International University, Nilai, Malaysia"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Saurabh",
+        "family": "Singhal",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "Computer Science and Engineering, Greater Noida Institute of Technology, Greater Noida, Uttar Pradesh, India"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Vishu",
+        "family": "Madaan",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "Computer Science and Engineering, Lovely Professional University, Phagwara, Punjab, India"
+          },
+          {
+            "name": "Faculty of Engineering and Technology, Shree Guru Gobind Singh Tricentenary University, Gurugram, Haryana, India"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Mohit",
+        "family": "Kumar",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "Computer Science and Engineering, MIT Art, Design and Technology University, Pune, Maharashtra, India"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0002-2189-3974",
+        "authenticated-orcid": true,
+        "given": "Pawan Kumar",
+        "family": "Verma",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "Computer Science & Engineering, Sharda University, Greater Noida, Uttar Pradesh, India"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      }
+    ]
+  },
+  "SRLAgent": {
+    "query_title": "SRLAgent: Enhancing Self-Regulated Learning Skills through Gamification and LLM Assistance",
+    "found_title": "Enhancing Online English Self-Regulated Learning through Gamification and Active Learning in Higher Education",
+    "doi": "10.55593/ej.28110int",
+    "container": "Teaching English as a Second or Foreign Language--TESL-EJ",
+    "year": 2024,
+    "author": [
+      {
+        "name": "Walailak University",
+        "sequence": "first",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0003-1919-2068",
+        "authenticated-orcid": false,
+        "given": "Budi",
+        "family": "Waluyo",
+        "sequence": "first",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0003-0701-3499",
+        "authenticated-orcid": false,
+        "given": "Kritsadee",
+        "family": "Songkhai",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "name": "Walailak University",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Jiali",
+        "family": "Li",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "name": "Huaqiao University",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      }
+    ]
+  },
+  "Tong_Ren": {
+    "query_title": "Deep Knowledge Tracing and Cognitive Load Estimation for Personalized Learning Path Generation",
+    "found_title": "Deep knowledge tracing and cognitive load estimation for personalized learning path generation using neural network architecture",
+    "doi": "10.1038/s41598-025-10497-x",
+    "container": "Scientific Reports",
+    "year": 2025,
+    "author": [
+      {
+        "given": "Chunyan",
+        "family": "Tong",
+        "sequence": "first",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Changhong",
+        "family": "Ren",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      }
+    ]
+  },
+  "Ozkaya_VR": {
+    "query_title": "How LLMs Are Shaping the Future of Virtual Reality",
+    "found_title": "How LLMs Are Shaping the Future of Virtual Reality",
+    "doi": "10.1109/access.2025.3631594",
+    "container": "IEEE Access",
+    "year": 2025,
+    "author": [
+      {
+        "given": "S\u00fceda",
+        "family": "\u00d6zkaya",
+        "sequence": "first",
+        "affiliation": [
+          {
+            "name": "Chair of Software Engineering, Technical University of Munich, Heilbronn, Germany"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0001-5559-2056",
+        "authenticated-orcid": false,
+        "given": "Santiago",
+        "family": "Berrezueta-Guzman",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "Chair of Software Engineering, Technical University of Munich, Heilbronn, Germany"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0002-5256-8429",
+        "authenticated-orcid": false,
+        "given": "Stefan",
+        "family": "Wagner",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "Chair of Software Engineering, Technical University of Munich, Heilbronn, Germany"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      }
+    ]
+  },
+  "Ishaq_Review": {
+    "query_title": "Level Up Your Coding: A Systematic Review of Personalized, Cognitive, and Gamified Learning in Programming Education",
+    "found_title": "Level up your coding: a systematic review of personalized, cognitive, and gamified learning in programming education",
+    "doi": "10.7717/peerj-cs.2310",
+    "container": "PeerJ Computer Science",
+    "year": 2024,
+    "author": [
+      {
+        "given": "Kashif",
+        "family": "Ishaq",
+        "sequence": "first",
+        "affiliation": [
+          {
+            "name": "School of Systems and Technology, University of Management and Technology, Lahore, Pakistan"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Atif",
+        "family": "Alvi",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "School of Systems and Technology, University of Management and Technology, Lahore, Pakistan"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Muhammad Ikram ul",
+        "family": "Haq",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "Department of Computer Science, Superior University, Lahore, Pakistan"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Fadhilah",
+        "family": "Rosdi",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "Faculty of Information Science and Technology, Universiti Kebangsaan Malaysia, Bangi, Malaysia"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Abubakar Nazeer",
+        "family": "Choudhry",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "Research, Innovation & Commercialization, University of Sargodha, Sargodha, Sargodha, Pakistan"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Arslan",
+        "family": "Anjum",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "School of Systems and Technology, University of Management and Technology, Lahore, Pakistan"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Fawad Ali",
+        "family": "Khan",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "School of Systems and Technology, University of Management and Technology, Lahore, Pakistan"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      }
+    ]
+  },
+  "Wang_Agents": {
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  "Wilschut_Games": {
+    "error": "HTTP Error 429: Too Many Requests"
+  },
+  "Muddaluru_CodeBERT": {
+    "query_title": "Code Quality Assessment Using Transformers",
+    "found_title": "Code Autocomplete Using Transformers",
+    "doi": "10.1007/978-3-030-91699-2_15",
+    "container": "Lecture Notes in Computer Science",
+    "year": 2021,
+    "author": [
+      {
+        "ORCID": "https://orcid.org/0000-0003-2589-0575",
+        "authenticated-orcid": false,
+        "given": "Gabriel T.",
+        "family": "Meyrer",
+        "sequence": "first",
+        "affiliation": [],
+        "role": [
+          {
+            "role": "author",
+            "vocabulary": "crossref"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0002-4319-594X",
+        "authenticated-orcid": false,
+        "given": "Denis A.",
+        "family": "Ara\u00fajo",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "role": "author",
+            "vocabulary": "crossref"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0001-8140-5621",
+        "authenticated-orcid": false,
+        "given": "Sandro J.",
+        "family": "Rigo",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "role": "author",
+            "vocabulary": "crossref"
+          }
+        ]
+      }
+    ]
+  },
+  "Rumble_LEA": {
+    "query_title": "Learning Engagement Assistant LEA Cross-Course Scalability of an Agentic AI Tutoring System",
+    "found_title": "Agentic AI Doctor Assistant System",
+    "doi": "10.1109/icesst69086.2026.11582858",
+    "container": "2026 IEEE International Conference on Emerging Synergy Science and Technology (ICESST)",
+    "year": 2026,
+    "author": [
+      {
+        "given": "Pradeep G",
+        "family": "Shetty",
+        "sequence": "first",
+        "affiliation": [
+          {
+            "name": "Srinivas University Institute of Engineering and Technology,Department Of Artificial Intelligence and Machine Learning,Mangaluru,India"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Amal",
+        "family": "M",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "Srinivas University Institute of Engineering and Technology,Department Of Artificial Intelligence and Machine Learning,Mangaluru,India"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Sourav",
+        "family": "Kritheesh",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "Srinivas University Institute of Engineering and Technology,Department Of Artificial Intelligence and Machine Learning,Mangaluru,India"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Govind M",
+        "family": "Das",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "Srinivas University Institute of Engineering and Technology,Department Of Artificial Intelligence and Machine Learning,Mangaluru,India"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "family": "Amith",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "Srinivas University Institute of Engineering and Technology,Department Of Artificial Intelligence and Machine Learning,Mangaluru,India"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      }
+    ]
+  },
+  "Xu_DKVMN": {
+    "query_title": "DKVMN+MRI: A New Deep Knowledge Tracing Model Based on DKVMN Incorporating Multi-Relational Information",
+    "found_title": "DKVMN&amp;MRI: A new deep knowledge tracing model based on DKVMN incorporating multi-relational information",
+    "doi": "10.1371/journal.pone.0312022",
+    "container": "PLOS ONE",
+    "year": 2024,
+    "author": [
+      {
+        "given": "Feng",
+        "family": "Xu",
+        "sequence": "first",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0009-0008-7137-6968",
+        "authenticated-orcid": true,
+        "given": "Kang",
+        "family": "Chen",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Maosheng",
+        "family": "Zhong",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Lei",
+        "family": "Liu",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Huizhu",
+        "family": "Liu",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Xianzeng",
+        "family": "Luo",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Lang",
+        "family": "Zheng",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      }
+    ]
+  },
+  "Costa_Gamified": {
+    "query_title": "Integrating LLMs in Gamified Systems: A Mathematical Framework",
+    "found_title": "Integrating LLM Usage in Gamified Systems",
+    "doi": "10.37394/23206.2025.24.25",
+    "container": "WSEAS TRANSACTIONS ON MATHEMATICS",
+    "year": 2025,
+    "author": [
+      {
+        "given": "Carlos J.",
+        "family": "Costa",
+        "sequence": "first",
+        "affiliation": [
+          {
+            "name": "ISEG \u2013 Lisbon School of Economics and Management, University of Lisbon, Lisboa, PORTUGAL"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      }
+    ]
+  },
+  "Koskinen_Ethics": {
+    "query_title": "Game-Based Learning Can Enhance Students Understanding of AI Ethics",
+    "found_title": "Game-Based Learning Can Enhance Students\u2019 Understanding of AI Ethics",
+    "doi": "10.1007/978-3-031-78269-5_5",
+    "container": "Lecture Notes in Computer Science",
+    "year": 2024,
+    "author": [
+      {
+        "ORCID": "https://orcid.org/0000-0002-9755-1057",
+        "authenticated-orcid": false,
+        "given": "Antti",
+        "family": "Koskinen",
+        "sequence": "first",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0001-5906-7654",
+        "authenticated-orcid": false,
+        "given": "Antero",
+        "family": "Lindstedt",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0003-2838-6892",
+        "authenticated-orcid": false,
+        "given": "Kristian",
+        "family": "Kiili",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      }
+    ]
+  },
+  "Spriggs_LMS": {
+    "query_title": "Personalizing Education through an Adaptive LMS with Integrated LLMs",
+    "found_title": "Personalizing Education through Advisement",
+    "doi": "10.1177/105678799200100110",
+    "container": "International Journal of Educational Reform",
+    "year": 1992,
+    "author": [
+      {
+        "given": "John M.",
+        "family": "Jenkins",
+        "sequence": "first",
+        "affiliation": [
+          {
+            "name": "P. K. Yonge Lab School College of Education University of Florida 1080, S.W. 11 St. Gainesville, FL 32611"
+          }
+        ],
+        "role": [
+          {
+            "role": "author",
+            "vocabulary": "crossref"
+          }
+        ]
+      }
+    ]
+  },
+  "Wang_EduPlanner": {
+    "query_title": "EduPlanner: LLM-Based Multi-Agent Systems for Customized Instructional Design",
+    "found_title": "EduPlanner: LLM-Based Multiagent Systems for Customized and Intelligent Instructional Design",
+    "doi": "10.1109/tlt.2025.3561332",
+    "container": "IEEE Transactions on Learning Technologies",
+    "year": 2025,
+    "author": [
+      {
+        "ORCID": "https://orcid.org/0009-0003-8185-6002",
+        "authenticated-orcid": false,
+        "given": "Xueqiao",
+        "family": "Zhang",
+        "sequence": "first",
+        "affiliation": [
+          {
+            "name": "School of Software Technology, Zhejiang University, Ningbo, China"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Chao",
+        "family": "Zhang",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "School of Software Technology, Zhejiang University, Ningbo, China"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0002-0951-1072",
+        "authenticated-orcid": false,
+        "given": "Jianwen",
+        "family": "Sun",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "Faculty of Artificial Intelligence in Education, Central China Normal University, Wuhan, China"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0002-6142-9914",
+        "authenticated-orcid": false,
+        "given": "Jun",
+        "family": "Xiao",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "College of Computer Science and Technology, Zhejiang University, Hangzhou, China"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0002-0512-880X",
+        "authenticated-orcid": false,
+        "given": "Yi",
+        "family": "Yang",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "College of Computer Science and Technology, Zhejiang University, Hangzhou, China"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0002-7037-1806",
+        "authenticated-orcid": false,
+        "given": "Yawei",
+        "family": "Luo",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "School of Software Technology, Zhejiang University, Ningbo, China"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      }
+    ]
+  },
+  "Hu_SPARC": {
+    "query_title": "WIP: Enhancing Game-Based Learning with AI-Driven Peer Agents SPARC",
+    "found_title": "WIP: Enhancing Game-Based Learning with AI-Driven Peer Agents",
+    "doi": "10.1109/fie63693.2025.11328500",
+    "container": "2025 IEEE Frontiers in Education Conference (FIE)",
+    "year": 2025,
+    "author": [
+      {
+        "given": "Chengzhang",
+        "family": "Zhu",
+        "sequence": "first",
+        "affiliation": [
+          {
+            "name": "Rowan University,Department of Electrical and Computer Engineering,USA"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Cecile H.",
+        "family": "Sam",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "Rowan University,Department of Educational Leadership,USA"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Yanlai",
+        "family": "Wu",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "Rowan University,Department of Electrical and Computer Engineering,USA"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Ying",
+        "family": "Tang",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "Rowan University,Department of Electrical and Computer Engineering,USA"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      }
+    ]
+  },
+  "Shao_EDF": {
+    "query_title": "Evidence-Decision-Feedback: Theory-Driven Adaptive Scaffolding for LLM Agents",
+    "found_title": "Evidence-Decision-Feedback: Theory-Driven Adaptive Scaffolding for\u00a0LLM Agents",
+    "doi": "10.1007/978-3-032-29744-0_1",
+    "container": "Lecture Notes in Computer Science",
+    "year": 2026,
+    "author": [
+      {
+        "ORCID": "https://orcid.org/0000-0003-0856-9587",
+        "authenticated-orcid": false,
+        "given": "Clayton",
+        "family": "Cohn",
+        "sequence": "first",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0009-0001-4305-9147",
+        "authenticated-orcid": false,
+        "given": "Siyuan",
+        "family": "Guo",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0009-0005-8192-8138",
+        "authenticated-orcid": false,
+        "given": "Surya",
+        "family": "Rayala",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0001-5990-5865",
+        "authenticated-orcid": false,
+        "given": "Hanchen David",
+        "family": "Wang",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0002-3706-2884",
+        "authenticated-orcid": false,
+        "given": "Naveeduddin",
+        "family": "Mohammed",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0002-5430-3993",
+        "authenticated-orcid": false,
+        "given": "Umesh",
+        "family": "Timalsina",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0009-0000-7853-0560",
+        "authenticated-orcid": false,
+        "given": "Shruti",
+        "family": "Jain",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Angela",
+        "family": "Eeds",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0001-7361-3826",
+        "authenticated-orcid": false,
+        "given": "Menton",
+        "family": "Deweese",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0009-0007-5782-8895",
+        "authenticated-orcid": false,
+        "given": "Pamela J.",
+        "family": "Osborn Popp",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0009-0003-6562-8018",
+        "authenticated-orcid": false,
+        "given": "Rebekah",
+        "family": "Stanton",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Shakeera L.",
+        "family": "Walker",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0001-6916-8774",
+        "authenticated-orcid": false,
+        "given": "Meiyi",
+        "family": "Ma",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0002-2752-3878",
+        "authenticated-orcid": false,
+        "given": "Gautam",
+        "family": "Biswas",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      }
+    ]
+  },
+  "Shi_Denoising": {
+    "query_title": "Denoising Programming Knowledge Tracing with a Code Graph-Based Tuning Adaptor",
+    "found_title": "Denoising Programming Knowledge Tracing with a Code Graph-based Tuning Adaptor",
+    "doi": "10.1145/3690624.3709172",
+    "container": "Proceedings of the 31st ACM SIGKDD Conference on Knowledge Discovery and Data Mining V.1",
+    "year": 2025,
+    "author": [
+      {
+        "ORCID": "https://orcid.org/0000-0003-0894-7023",
+        "authenticated-orcid": false,
+        "given": "Weibo",
+        "family": "Gao",
+        "sequence": "first",
+        "affiliation": [
+          {
+            "name": "State Key Laboratory of Cognitive Intelligence, University of Science and Technology of China, Hefei, China"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0001-6956-5550",
+        "authenticated-orcid": false,
+        "given": "Qi",
+        "family": "Liu",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "State Key Laboratory of Cognitive Intelligence, University of Science and Technology of China, Hefei, China and Institute of Artificial Intelligence, Hefei Comprehensive National Science Center, Hefei, Anhui, China"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0009-0005-3657-1133",
+        "authenticated-orcid": false,
+        "given": "Rui",
+        "family": "Li",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "State Key Laboratory of Cognitive Intelligence, University of Science and Technology of China, Hefei, China"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0009-0007-3542-4304",
+        "authenticated-orcid": false,
+        "given": "Yuze",
+        "family": "Zhao",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "State Key Laboratory of Cognitive Intelligence, University of Science and Technology of China, Hefei, China"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0001-9921-2078",
+        "authenticated-orcid": false,
+        "given": "Hao",
+        "family": "Wang",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "State Key Laboratory of Cognitive Intelligence, University of Science and Technology of China, Hefei, China"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0002-5980-6098",
+        "authenticated-orcid": false,
+        "given": "Linan",
+        "family": "Yue",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "State Key Laboratory of Cognitive Intelligence, University of Science and Technology of China, Hefei, China"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0000-0002-5085-7841",
+        "authenticated-orcid": false,
+        "given": "Fangzhou",
+        "family": "Yao",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "State Key Laboratory of Cognitive Intelligence, University of Science and Technology of China, Hefei, China"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "ORCID": "https://orcid.org/0009-0002-8689-0763",
+        "authenticated-orcid": false,
+        "given": "Zheng",
+        "family": "Zhang",
+        "sequence": "additional",
+        "affiliation": [
+          {
+            "name": "State Key Laboratory of Cognitive Intelligence, University of Science and Technology of China, hefei, China"
+          }
+        ],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      }
+    ]
+  },
+  "Muddaluru_Score": {
+    "query_title": "CodeBERTScore: Evaluating Code Generation with Pretrained Models",
+    "found_title": "CodeBERTScore: Evaluating Code Generation with Pretrained Models of Code",
+    "doi": "10.18653/v1/2023.emnlp-main.859",
+    "container": "Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing",
+    "year": 2023,
+    "author": [
+      {
+        "given": "Shuyan",
+        "family": "Zhou",
+        "sequence": "first",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Uri",
+        "family": "Alon",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Sumit",
+        "family": "Agarwal",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      },
+      {
+        "given": "Graham",
+        "family": "Neubig",
+        "sequence": "additional",
+        "affiliation": [],
+        "role": [
+          {
+            "vocabulary": "crossref",
+            "role": "author"
+          }
+        ]
+      }
+    ]
+  },
+  "Zhang_Classroom": {
+    "error": "HTTP Error 429: Too Many Requests"
+  }
+}

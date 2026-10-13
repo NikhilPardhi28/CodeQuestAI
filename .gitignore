@@ -72,3 +72,44 @@ TestResults/
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+# Local testing, diagnostic scripts, screenshots, and logs
+*.ps1
+capture_standalone_screenshot.py
+inspect_running_procs.py
+desktop_cap.png
+standalone_menu_screenshot.png
+kenney_diagnostic_report.txt
+keycloak_login_error.html
+build_summary.txt
+*.xml
+
+# Unity standalone builds and duplicate project folders
+_UnityBackup/
+My project/
+GameClient/My project/
+Skins/
+Animations/
+Model/
+Preview.png
+License.txt
+Visit Kenney.url
+Visit Patreon.url
+
+# Third-party local standalone tool distributions
+Tools/keycloak-*/
+
+# LaTeX intermediate build files and temporary dumps
+*.aux
+*.bbl
+*.blg
+*.lof
+*.lot
+*.out
+*.toc
+litreview_doc_dump.txt
+litreview_table_dump.txt
+proposal_dump.txt
+College Report/Sample/
+*.zip
+

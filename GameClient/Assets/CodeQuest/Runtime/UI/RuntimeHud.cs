@@ -20,6 +20,7 @@ namespace CodeQuest.UI
         private readonly IGameStateService _gameState;
         private readonly IInteractionSource _interaction;
         private readonly QuestService _quests;
+        private readonly IInteractiveAuthenticationProvider _authentication;
         private readonly PlayerInteractor _playerInteractor;
         private readonly DialogueSession _dialogue;
         private readonly ITutorHintProvider _tutor = new RuleBasedTutorHintProvider();
@@ -61,12 +62,13 @@ namespace CodeQuest.UI
         private CursorLockMode _returnCursorLock;
         private bool _returnCursorVisible;
 
-        public RuntimeHud(CodeQuestApiClient api, IGameStateService gameState, IInteractionSource interaction, QuestService quests, Transform root)
+        public RuntimeHud(CodeQuestApiClient api, IGameStateService gameState, IInteractionSource interaction, QuestService quests, Transform root, IInteractiveAuthenticationProvider authentication = null)
         {
             _api = api;
             _gameState = gameState;
             _interaction = interaction;
             _quests = quests;
+            _authentication = authentication;
             _playerInteractor = interaction as PlayerInteractor;
             _dialogue = new DialogueSession(quests);
             _dialogue.EventRaised += eventId => _quests.RecordWorldEvent("dialogue:" + eventId, QuestObjectiveKind.DialogueEvent, eventId);
@@ -153,6 +155,8 @@ namespace CodeQuest.UI
             MakeButton(_profile.transform, "Load profile", "Load profile", new Vector2(-140f, -190f), () => _ = LoadProfileAsync());
             MakeButton(_profile.transform, "Close profile", "Close", new Vector2(140f, -190f), () => ShowProfile(false));
             MakeButton(_menu.transform, "Open journal", "Quest journal", new Vector2(0f, -400f), () => ShowJournal(true));
+            if (_authentication != null)
+                MakeButton(_menu.transform, "Sign in", "Sign in with Keycloak", new Vector2(0f, -460f), () => _ = SignInAsync());
             _journal = MakePanel(canvasObject.transform, "Quest Journal");
             MakeText(_journal.transform, "Journal title", new Vector2(.5f, 1f), new Vector2(.5f, 1f), new Vector2(0f, -56f), new Vector2(700f, 56f), 28, TextAnchor.MiddleCenter).text = "Quest journal • server-authoritative progress";
             _journalText = MakeText(_journal.transform, "Journal entries", new Vector2(.5f, .5f), new Vector2(.5f, .5f), Vector2.zero, new Vector2(720f, 330f), 18, TextAnchor.UpperLeft);
@@ -163,16 +167,78 @@ namespace CodeQuest.UI
             _dialogueChoices = _dialoguePanel.transform;
             MakeButton(_dialoguePanel.transform, "Close dialogue", "Continue / close", new Vector2(0f, -500f), () => AdvanceDialogue());
             _challengePanel = MakePanel(canvasObject.transform, "Coding Challenge");
-            _challengeTitle = MakeText(_challengePanel.transform, "Challenge title", new Vector2(.5f, 1f), new Vector2(.5f, 1f), new Vector2(0f, -44f), new Vector2(760f, 54f), 27, TextAnchor.MiddleCenter);
-            _challengeTitle.text = "Python challenge";
-            _challengeInstructions = MakeText(_challengePanel.transform, "Challenge instructions", new Vector2(.5f, 1f), new Vector2(.5f, 1f), new Vector2(0f, -112f), new Vector2(760f, 110f), 17, TextAnchor.UpperLeft);
-            _challengeSource = MakeInputField(_challengePanel.transform, new Vector2(0f, -310f), new Vector2(760f, 220f));
-            _challengeFeedback = MakeText(_challengePanel.transform, "Challenge feedback", new Vector2(.5f, 0f), new Vector2(.5f, 0f), new Vector2(0f, 135f), new Vector2(760f, 105f), 15, TextAnchor.MiddleLeft);
-            MakeButton(_challengePanel.transform, "Check function header", "Check header", new Vector2(-340f, -500f), CheckFunctionHeader, 150f);
-            MakeButton(_challengePanel.transform, "Submit challenge", "Submit to evaluator", new Vector2(-170f, -500f), () => _ = SubmitChallengeAsync(), 150f);
-            MakeButton(_challengePanel.transform, "Request hint", "Next hint", new Vector2(0f, -500f), () => _ = RequestChallengeHintAsync(), 150f);
-            MakeButton(_challengePanel.transform, "Cancel polling", "Stop waiting", new Vector2(170f, -500f), StopWaitingForSubmission, 150f);
-            _nextStepButton = MakeButton(_challengePanel.transform, "Next challenge", "Valley challenge list", new Vector2(340f, -500f), ShowNextValleyStep, 150f);
+            var challengeRect = _challengePanel.GetComponent<RectTransform>();
+            challengeRect.sizeDelta = new Vector2(960f, 620f);
+            _challengePanel.GetComponent<Image>().color = new Color(0.06f, 0.09f, 0.13f, 0.98f);
+
+            // Title: "Variable Valley — Challenge 1"
+            _challengeTitle = MakeText(_challengePanel.transform, "Challenge title", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(32f, -38f), new Vector2(-64f, 40f), 24, TextAnchor.MiddleLeft);
+            _challengeTitle.fontStyle = FontStyle.Bold;
+            _challengeTitle.text = "Variable Valley — Challenge 1";
+            _challengeTitle.rectTransform.pivot = new Vector2(0f, 1f);
+
+            // Subtitle / Instruction: "Create a variable named message and store a greeting in it."
+            _challengeInstructions = MakeText(_challengePanel.transform, "Challenge instructions", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(32f, -80f), new Vector2(-64f, 48f), 16, TextAnchor.UpperLeft, null, new Color(0.82f, 0.85f, 0.88f, 1f));
+            _challengeInstructions.rectTransform.pivot = new Vector2(0f, 1f);
+
+            // Python Editor Container Card
+            var editorCard = new GameObject("Editor Card", typeof(RectTransform), typeof(Image));
+            editorCard.transform.SetParent(_challengePanel.transform, false);
+            var editorCardRect = editorCard.GetComponent<RectTransform>();
+            editorCardRect.anchorMin = new Vector2(0f, 1f);
+            editorCardRect.anchorMax = new Vector2(1f, 1f);
+            editorCardRect.pivot = new Vector2(0f, 1f);
+            editorCardRect.anchoredPosition = new Vector2(32f, -135f);
+            editorCardRect.sizeDelta = new Vector2(-64f, 190f);
+            editorCard.GetComponent<Image>().color = new Color(0.08f, 0.12f, 0.18f, 1f);
+
+            // "PYTHON EDITOR" header label inside editor card
+            var editorLabel = MakeText(editorCard.transform, "Editor Label", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(16f, -12f), new Vector2(-32f, 22f), 12, TextAnchor.UpperLeft, null, new Color(0.55f, 0.60f, 0.68f, 1f));
+            editorLabel.fontStyle = FontStyle.Bold;
+            editorLabel.text = "PYTHON EDITOR";
+            editorLabel.rectTransform.pivot = new Vector2(0f, 1f);
+
+            // InputField inside editor card
+            _challengeSource = MakeInputField(editorCard.transform, new Vector2(0f, -14f), new Vector2(0f, -44f));
+            var srcRect = _challengeSource.GetComponent<RectTransform>();
+            srcRect.anchorMin = new Vector2(0f, 0f);
+            srcRect.anchorMax = new Vector2(1f, 1f);
+            srcRect.pivot = new Vector2(0.5f, 0.5f);
+            srcRect.offsetMin = new Vector2(12f, 10f);
+            srcRect.offsetMax = new Vector2(-12f, -34f);
+            _challengeSource.GetComponent<Image>().color = new Color(0.04f, 0.06f, 0.09f, 0.65f);
+
+            // Action Buttons: Run / Submit (Green) and Close (Dark)
+            var runBtn = MakeButton(_challengePanel.transform, "Submit challenge", "▶  Run / Submit", new Vector2(-220f, -360f), () => _ = SubmitChallengeAsync(), 420f, new Color(0.14f, 0.52f, 0.21f, 1f), 18);
+            var runBtnRect = runBtn.GetComponent<RectTransform>();
+            runBtnRect.pivot = new Vector2(0.5f, 1f);
+
+            var closeBtn = MakeButton(_challengePanel.transform, "Close challenge", "Close", new Vector2(220f, -360f), CloseChallenge, 420f, new Color(0.13f, 0.15f, 0.18f, 1f), 18);
+            var closeBtnRect = closeBtn.GetComponent<RectTransform>();
+            closeBtnRect.pivot = new Vector2(0.5f, 1f);
+
+            // Output / Test Results Card
+            var outputCard = new GameObject("Output Card", typeof(RectTransform), typeof(Image));
+            outputCard.transform.SetParent(_challengePanel.transform, false);
+            var outputCardRect = outputCard.GetComponent<RectTransform>();
+            outputCardRect.anchorMin = new Vector2(0f, 1f);
+            outputCardRect.anchorMax = new Vector2(1f, 1f);
+            outputCardRect.pivot = new Vector2(0f, 1f);
+            outputCardRect.anchoredPosition = new Vector2(32f, -425f);
+            outputCardRect.sizeDelta = new Vector2(-64f, 160f);
+            outputCard.GetComponent<Image>().color = new Color(0.05f, 0.11f, 0.08f, 1f);
+
+            var outputHeader = MakeText(outputCard.transform, "Output Header", new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(16f, -12f), new Vector2(-32f, 26f), 15, TextAnchor.UpperLeft, null, new Color(0.25f, 0.72f, 0.31f, 1f));
+            outputHeader.fontStyle = FontStyle.Bold;
+            outputHeader.text = "Output / Test Results";
+            outputHeader.rectTransform.pivot = new Vector2(0f, 1f);
+
+            _challengeFeedback = MakeText(outputCard.transform, "Challenge feedback", new Vector2(0f, 0f), new Vector2(1f, 1f), Vector2.zero, Vector2.zero, 14, TextAnchor.UpperLeft, GetMonoFont(), new Color(0.90f, 0.93f, 0.96f, 1f));
+            _challengeFeedback.rectTransform.offsetMin = new Vector2(16f, 10f);
+            _challengeFeedback.rectTransform.offsetMax = new Vector2(-16f, -40f);
+            _challengeFeedback.text = "Ready to run.\nClick Run / Submit to execute with the backend Python evaluator.";
+
+            _nextStepButton = runBtn;
             _catalog.SetActive(false);
             _profile.SetActive(false);
             _journal.SetActive(false);
@@ -193,6 +259,38 @@ namespace CodeQuest.UI
                 var readiness = await _api.GetReadinessAsync(token);
                 if (!_lifetime.IsCancellationRequested)
                     _status.text = readiness.IsSuccess ? "Backend: online • database ready" : "Backend: online • " + readiness.Error.message;
+            }
+        }
+
+        private async Task SignInAsync()
+        {
+            if (_authentication == null)
+            {
+                _status.text = "Sign-in is available in the Windows desktop build only.";
+                return;
+            }
+            _status.text = "Complete sign-in in your browser…";
+            try
+            {
+                if (!await _authentication.SignInAsync(_lifetime.Token))
+                {
+                    _status.text = "Sign-in was not completed. Check Keycloak client setup and try again.";
+                    return;
+                }
+                _status.text = "Keycloak authorization completed • checking the backend…";
+                await LoadProfileAsync();
+                var progressSynced = await _quests.RefreshProgressAsync(_lifetime.Token);
+                _status.text = progressSynced
+                    ? "Signed in • quest progress synchronized from the backend."
+                    : "Signed in • quest progress could not be synchronized. Retry from the quest journal.";
+            }
+            catch (OperationCanceledException)
+            {
+                if (!_lifetime.IsCancellationRequested) _status.text = "Sign-in was cancelled.";
+            }
+            catch (Exception)
+            {
+                _status.text = "Sign-in failed. Check the local identity service and callback setup.";
             }
         }
 
@@ -281,7 +379,7 @@ namespace CodeQuest.UI
                 if (result.IsSuccess)
                     _profileText.text = result.Value.displayName + "\n" + result.Value.locale + "\nProfile ID: " + result.Value.id;
                 else if (result.Error.code == "authentication_required")
-                    _profileText.text = "Sign in is required to view this profile. The OIDC provider is not configured in this milestone.";
+                    _profileText.text = "Sign in is required to view this profile.";
                 else if (result.Error.code == "invalid_bearer_token")
                     _profileText.text = "Your sign-in session is invalid or expired. Sign in again.";
                 else
@@ -350,15 +448,14 @@ namespace CodeQuest.UI
                 return;
             }
             _activeChallenge = result.Value;
-            if (_nextStepButton != null)
-                _nextStepButton.GetComponentInChildren<Text>().text = "Valley challenge list";
-            _challengeTitle.text = result.Value.title;
             var content = result.Value.publicContent;
-            _challengeInstructions.text = result.Value.statement +
-                (content == null ? string.Empty : "\n\nSignature: " + content.functionSignature +
-                "\n" + content.expectedOutputFormat + "\n\nExamples:\n" + string.Join("\n", content.examples ?? Array.Empty<string>()));
-            _challengeSource.text = content == null ? string.Empty : content.starterCode;
-            _challengeFeedback.text = "Local header check examines only the function declaration. Submit uses the protected server evaluator; no code runs on this client.";
+            var sequenceNum = content != null && content.sequence > 0 ? content.sequence : 1;
+            _challengeTitle.text = "Variable Valley — Challenge " + sequenceNum;
+            _challengeInstructions.text = result.Value.statement;
+            _challengeSource.text = content == null || string.IsNullOrWhiteSpace(content.starterCode)
+                ? "message = \"Hello, Valley!\"\nprint(message)\n"
+                : content.starterCode;
+            _challengeFeedback.text = "Ready to evaluate.\nType your solution above and click '▶ Run / Submit'.";
         }
 
         private void CheckFunctionHeader()
@@ -576,7 +673,7 @@ namespace CodeQuest.UI
             for (var index = 0; index < choices.Count; index++)
             {
                 var choiceIndex = index;
-                var y = -265f - index * 48f;
+                var y = -265f - index * 52f;
                 var button = MakeButton(_dialogueChoices, "Dialogue choice " + index, choices[index].label, new Vector2(0f, y), () =>
                 {
                     var selected = _dialogue.VisibleChoices()[choiceIndex];
@@ -587,7 +684,7 @@ namespace CodeQuest.UI
                     }
                     _dialogue.Choose(choiceIndex);
                     RenderDialogue();
-                });
+                }, 540f);
                 _choiceButtons.Add(button);
             }
         }
@@ -595,6 +692,13 @@ namespace CodeQuest.UI
         private void CloseDialogue()
         {
             _dialogue.Cancel(); _dialoguePanel.SetActive(false);
+            _interaction.CancelCurrentInteraction();
+            RestoreModalReturn();
+        }
+
+        private void CloseChallenge()
+        {
+            if (_challengePanel != null) _challengePanel.SetActive(false);
             _interaction.CancelCurrentInteraction();
             RestoreModalReturn();
         }
@@ -617,6 +721,8 @@ namespace CodeQuest.UI
             if (interactable is NpcDialogueInteractable npc) OpenDialogue(npc.Definition);
             else if (interactable is LearningRegionPortalInteractable portal && portal.RegionSlug == "variable-valley")
                 ShowVariableValley();
+            else if (interactable is ChallengeBeaconInteractable beacon)
+                _ = OpenChallengeAsync(beacon.ChallengeSlug, beacon.Version);
         }
 
         private void RememberModalReturn()
@@ -633,6 +739,31 @@ namespace CodeQuest.UI
             Cursor.visible = _returnToMenu || _returnCursorVisible && _returnCursorLock != CursorLockMode.Locked;
         }
 
+        private static Font _cachedUiFont;
+        private static Font _cachedMonoFont;
+
+        public static Font GetUiFont()
+        {
+            if (_cachedUiFont != null) return _cachedUiFont;
+            _cachedUiFont = Resources.Load<Font>("CodeQuestFont");
+            if (_cachedUiFont == null)
+                _cachedUiFont = Font.CreateDynamicFontFromOSFont(new[] { "Segoe UI", "Arial", "Calibri", "Helvetica", "DejaVu Sans" }, 16);
+            if (_cachedUiFont == null)
+                _cachedUiFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            return _cachedUiFont;
+        }
+
+        public static Font GetMonoFont()
+        {
+            if (_cachedMonoFont != null) return _cachedMonoFont;
+            _cachedMonoFont = Resources.Load<Font>("CodeQuestMono");
+            if (_cachedMonoFont == null)
+                _cachedMonoFont = Font.CreateDynamicFontFromOSFont(new[] { "Cascadia Code", "Consolas", "Courier New", "monospace" }, 15);
+            if (_cachedMonoFont == null)
+                _cachedMonoFont = GetUiFont();
+            return _cachedMonoFont;
+        }
+
         private static GameObject MakePanel(Transform parent, string name)
         {
             var panel = new GameObject(name, typeof(RectTransform), typeof(Image));
@@ -646,7 +777,7 @@ namespace CodeQuest.UI
             return panel;
         }
 
-        private static Text MakeText(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 position, Vector2 size, int fontSize, TextAnchor alignment)
+        private static Text MakeText(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 position, Vector2 size, int fontSize, TextAnchor alignment, Font customFont = null, Color? color = null)
         {
             var textObject = new GameObject(name, typeof(RectTransform), typeof(Text));
             textObject.transform.SetParent(parent, false);
@@ -656,16 +787,16 @@ namespace CodeQuest.UI
             rect.sizeDelta = size;
             rect.anchoredPosition = position;
             var text = textObject.GetComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.font = customFont != null ? customFont : GetUiFont();
             text.fontSize = fontSize;
-            text.color = Color.white;
+            text.color = color.HasValue ? color.Value : Color.white;
             text.alignment = alignment;
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Overflow;
             return text;
         }
 
-        private static GameObject MakeButton(Transform parent, string name, string label, Vector2 position, Action onClick, float width = 250f)
+        private static GameObject MakeButton(Transform parent, string name, string label, Vector2 position, Action onClick, float width = 250f, Color? bgColor = null, int fontSize = 18)
         {
             var buttonObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
             buttonObject.transform.SetParent(parent, false);
@@ -674,11 +805,14 @@ namespace CodeQuest.UI
             rect.anchorMax = new Vector2(.5f, 1f);
             rect.sizeDelta = new Vector2(width, 48f);
             rect.anchoredPosition = position;
-            buttonObject.GetComponent<Image>().color = new Color(.12f, .35f, .57f, 1f);
+            buttonObject.GetComponent<Image>().color = bgColor.HasValue ? bgColor.Value : new Color(.12f, .35f, .57f, 1f);
             buttonObject.GetComponent<Button>().onClick.AddListener(() => onClick());
-            var text = MakeText(buttonObject.transform, label, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, 18, TextAnchor.MiddleCenter);
-            text.rectTransform.offsetMin = Vector2.zero;
-            text.rectTransform.offsetMax = Vector2.zero;
+            var text = MakeText(buttonObject.transform, "Label", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, fontSize, TextAnchor.MiddleCenter);
+            text.text = label;
+            text.fontStyle = FontStyle.Bold;
+            text.color = Color.white;
+            text.rectTransform.offsetMin = new Vector2(8f, 2f);
+            text.rectTransform.offsetMax = new Vector2(-8f, -2f);
             return buttonObject;
         }
 
@@ -691,15 +825,14 @@ namespace CodeQuest.UI
             rect.anchorMax = new Vector2(.5f, .5f);
             rect.sizeDelta = size;
             rect.anchoredPosition = position;
-            inputObject.GetComponent<Image>().color = new Color(.025f, .035f, .05f, 1f);
-            var text = MakeText(inputObject.transform, "Code text", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, 16, TextAnchor.UpperLeft);
-            text.font = Font.CreateDynamicFontFromOSFont(new[] { "Cascadia Mono", "Consolas", "monospace" }, 16);
-            text.rectTransform.offsetMin = new Vector2(12f, 10f);
-            text.rectTransform.offsetMax = new Vector2(-12f, -10f);
+            inputObject.GetComponent<Image>().color = new Color(0.05f, 0.07f, 0.10f, 1f);
+            var text = MakeText(inputObject.transform, "Code text", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, 15, TextAnchor.UpperLeft, GetMonoFont(), new Color(0.93f, 0.95f, 0.98f, 1f));
+            text.rectTransform.offsetMin = new Vector2(14f, 12f);
+            text.rectTransform.offsetMax = new Vector2(-14f, -12f);
             text.fontStyle = FontStyle.Normal;
-            var placeholder = MakeText(inputObject.transform, "Code placeholder", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, 15, TextAnchor.UpperLeft);
-            placeholder.text = "Write your Python function here…";
-            placeholder.color = new Color(.65f, .68f, .72f, 1f);
+            text.lineSpacing = 1.25f;
+            var placeholder = MakeText(inputObject.transform, "Code placeholder", Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero, 15, TextAnchor.UpperLeft, GetMonoFont(), new Color(0.48f, 0.54f, 0.60f, 1f));
+            placeholder.text = "# Enter your Python code here...\n";
             placeholder.rectTransform.offsetMin = text.rectTransform.offsetMin;
             placeholder.rectTransform.offsetMax = text.rectTransform.offsetMax;
             var field = inputObject.GetComponent<InputField>();

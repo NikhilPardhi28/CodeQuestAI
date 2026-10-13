@@ -1,0 +1,10 @@
+\phantomsection
+\addcontentsline{toc}{chapter}{Abstract}
+\chapter*{Abstract}
+
+Computer science education frequently struggles with student disengagement in introductory programming courses, where conventional platforms rely heavily on passive tutorials and isolated browser coding exercises. To address this challenge, this project presents \textbf{CodeQuest AI}, an agentic AI-powered 3D open-world role-playing game designed for adaptive Python programming education. The platform synthesizes exploratory 3D gameplay with a secure, cloud-native code execution architecture. 
+
+The client is engineered in Unity~6 using the Universal Render Pipeline (URP), featuring third-person avatar locomotion, proximity-based NPC dialogues, and an in-game modal code editor HUD equipped with TrueType monospace typography. Player code submissions are dispatched asynchronously over RESTful APIs to a FastAPI gateway. The gateway enforces user authentication via Keycloak (OAuth~2.0 / OIDC) and routes execution requests to a decoupled Docker sandbox worker. Submissions are evaluated inside hermetic, unprivileged containers constrained by strict cgroup CPU/memory quotas and timeouts against behavioral test assertions. Verified test results and quest milestones are persisted in a relational PostgreSQL database. End-to-end evaluation validates sub-second execution latency, robust host isolation, and verified cross-session progression within the introductory Variable Valley curriculum slice.
+
+\vspace{0.6cm}
+\noindent\textbf{Keywords:} Programming Education; Serious Games; 3D RPG; Unity 6; FastAPI; Docker Sandboxing; Automated Code Evaluation; Python Pedagogy.

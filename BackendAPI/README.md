@@ -15,7 +15,7 @@ uv run python -m BackendAPI.app.db.seed
 uv run python -m uvicorn BackendAPI.app.main:app --reload
 ```
 
-`.env.example` contains local placeholders only. Replace them for shared environments; never commit `.env`. Local PostgreSQL is started separately. OIDC is still unselected; protected routes fail closed until all three issuer/audience/JWKS settings are configured.
+`.env.example` contains local placeholders only. Replace them for shared environments; never commit `.env`. Local PostgreSQL is started separately. For the supplied local Keycloak realm, follow the [Keycloak setup guide](../Documentation/local-keycloak.md); protected routes fail closed until all three issuer/audience/JWKS settings are configured. Unity sign-in is supported in Windows desktop Editor/standalone builds only and still requires live Keycloak setup.
 
 ## Configuration
 

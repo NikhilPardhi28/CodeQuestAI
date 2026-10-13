@@ -91,5 +91,36 @@ namespace CodeQuest.Editor
             var path = parent + "/" + name;
             if (!AssetDatabase.IsValidFolder(path)) AssetDatabase.CreateFolder(parent, name);
         }
+
+        [MenuItem("CodeQuest/Build Windows Player")]
+        public static void BuildWindowsPlayer()
+        {
+            var buildFolder = @"D:\CodeQuestAI\Builds\Windows";
+            if (!Directory.Exists(buildFolder)) Directory.CreateDirectory(buildFolder);
+            var buildPath = Path.Combine(buildFolder, "CodeQuestAI.exe");
+
+            var buildPlayerOptions = new BuildPlayerOptions
+            {
+                scenes = new[] { ScenePath },
+                locationPathName = buildPath,
+                target = BuildTarget.StandaloneWindows64,
+                options = BuildOptions.None
+            };
+
+            var report = BuildPipeline.BuildPlayer(buildPlayerOptions);
+            var summary = report.summary;
+
+            File.WriteAllText(@"D:\CodeQuestAI\build_summary.txt",
+                $"Result: {summary.result}\nTotalErrors: {summary.totalErrors}\nTotalWarnings: {summary.totalWarnings}\nTotalSize: {summary.totalSize} bytes\nOutputPath: {buildPath}\nDuration: {summary.totalTime}\n");
+
+            if (summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded)
+            {
+                Debug.Log($"[CodeQuest] Build succeeded: {buildPath} ({summary.totalSize} bytes)");
+            }
+            else
+            {
+                Debug.LogError($"[CodeQuest] Build failed with result: {summary.result}");
+            }
+        }
     }
 }

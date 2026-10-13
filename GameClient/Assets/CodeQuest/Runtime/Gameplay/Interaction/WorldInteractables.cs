@@ -17,6 +17,20 @@ namespace CodeQuest.Gameplay.Interaction
         public override void Interact(GameObject interactor) => Activated?.Invoke();
     }
 
+    public sealed class ChallengeBeaconInteractable : InteractableBehaviour
+    {
+        public event Action Activated;
+        public string ChallengeSlug { get; private set; }
+        public int Version { get; private set; }
+        public void Configure(string challengeSlug, string prompt, int version = 1)
+        {
+            ChallengeSlug = challengeSlug;
+            Version = version;
+            base.Configure("beacon-" + challengeSlug, prompt, 10);
+        }
+        public override void Interact(GameObject interactor) => Activated?.Invoke();
+    }
+
     public abstract class StatefulWorldInteractable : InteractableBehaviour
     {
         [SerializeField] private string questId;

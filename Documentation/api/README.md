@@ -78,7 +78,7 @@ Do not place tokens in command history or logs. No fake/development auth bypass 
 
 ## Known limitations
 
-- Identity provider and deployment are not selected. Bearer validation currently accepts RS256 OIDC JWTs only and checks signature, issuer, audience, expiration, issued-at, and subject. Role/scope policy and account lifecycle remain future work.
+- Production identity provider and deployment are not selected. Local Keycloak 26.8.0 and the Windows desktop Unity sign-in flow are documented in [the local Keycloak guide](../local-keycloak.md); the live flow has not been verified with a real token. Bearer validation accepts RS256 OIDC JWTs only and checks signature, issuer, audience, expiration, issued-at, and subject. Role/scope policy and account lifecycle remain future work.
 - Quest progress writes and authoritative quest/progression reads are implemented only in v2. Challenge submissions use the additive v1 routes below; source is never included in learner response bodies.
 - V1 quest progress remains read-only. Versioned quest event writes and authoritative quest/progression reads are implemented in additive v2 routes described below. V2 XP rewards require a trusted passed challenge record; client interaction/checkpoint claims cannot independently award XP.
 - Challenge authoring/publishing, teacher/admin routes, refresh-token handling, CORS, and production observability are not implemented.

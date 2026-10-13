@@ -1,0 +1,76 @@
+\chapter{Introduction}
+\label{ch:intro}
+
+This chapter introduces the domain context, background, motivation, and objectives of the major project titled \textbf{\ProjectTitle}. It establishes the pressing challenges in modern programming pedagogy, contrasts conventional instruction with serious game-based learning, and outlines the structural organization of this project report.
+
+\section{Background and Domain Context}
+Programming literacy has emerged as an indispensable cornerstone of modern technical education. Among programming languages, Python maintains a preeminent status across academia, artificial intelligence, data engineering, and automation due to its expressive syntax and rich ecosystem. However, novice computer science students consistently experience high cognitive load, frustration, and attrition during their introductory programming courses.
+
+\subsection{Existing Methods and Learning Technologies}
+Instructional methods in programming education have evolved through several paradigms:
+\begin{enumerate}
+    \item \textbf{Traditional Classroom Lectures and Textbooks:} Emphasize theoretical syntax, grammar specifications, and algorithmic flowcharts. While foundational, lectures lack immediate execution feedback and student-driven experimentation.
+    \item \textbf{Video-Based Online Courseware (MOOCs):} Massive Open Online Courses (e.g., Coursera, Udemy, YouTube tutorials) deliver pre-recorded instruction. Students passively observe instructor code, creating an illusion of competence that breaks down during independent problem-solving.
+    \item \textbf{Interactive Web Practice Platforms:} Services such as LeetCode, HackerRank, and Codecademy provide browser-based sandboxes and automated unit tests. While effective for drill practice and competitive interview preparation, they lack narrative context, emotional immersion, and progressive intrinsic motivation.
+    \item \textbf{Gamified Programming Environments:} Tools such as CodeCombat and CheckiO introduce game sprites and challenges. However, most existing educational games rely on block-based drag-and-drop mechanics or strictly beginner-level command sequences (e.g., \texttt{hero.moveRight()}), rarely transitioning learners into production-grade Python paradigms.
+\end{enumerate}
+
+\subsection{Limitations of Conventional Approaches}
+Empirical computing education literature highlights three critical bottlenecks in current platforms:
+\begin{itemize}
+    \item \textbf{The Engagement and Retention Deficit:} Passive reading and video consumption fail to foster self-regulated learning (SRL). Learners frequently disengage when encountering debugging obstacles in isolated IDEs.
+    \item \textbf{Shallow Pedagogical Coverage:} Most gamified platforms plateau at elementary loops and conditional statements, avoiding essential concepts such as functions with return values, data structures, error handling, modular programming, and test-driven development.
+    \item \textbf{Absence of Authentic, Secure Execution:} Many educational games simulate code evaluation via static string matching or regular expressions rather than executing student submissions against an authentic runtime. Conversely, platforms that execute code directly in the browser or insecure hosts risk instability and security breaches.
+\end{itemize}
+
+\section{Aim and Motivation}
+
+\subsection{Aim}
+The central aim of this project is to design, implement, and empirically validate \textbf{CodeQuest AI}---an interactive, full-stack 3D educational role-playing game that contextualizes Python learning through narrative quests, an in-game multiline code editor, automated isolated sandbox execution, and server-authoritative progress tracking.
+
+\subsection{Motivation}
+Computer game mechanics offer powerful psychological affordances for learning, including immediate feedback loops, clear goal orientation, spatial agency, and intrinsic rewards. In video games, players willingly persist through dozens of failed attempts to defeat a difficult boss or navigate a puzzle; in contrast, encountering a compiler syntax error in a standard command prompt frequently causes beginners to abandon programming exercises.
+
+By embedding Python coding challenges directly into a living 3D RPG world---where completing programming tasks activates mystical relays, illuminates valley beacons, and advances story dialogue---CodeQuest AI transforms programming from an abstract academic chore into an empowering quest mechanism. Furthermore, coupling the 3D client to a modern microservices architecture with isolated Docker containers demonstrates how serious games can maintain rigorous security, server-authoritative state, and industry-grade test evaluation.
+
+\subsection{Expected Contributions}
+The primary contributions of this project encompass:
+\begin{enumerate}
+    \item \textbf{Full-Stack Client-Server Architecture for Educational Gaming:} Delivering an end-to-end integrated system combining a Unity~6 URP 3D client, an asynchronous FastAPI backend, a PostgreSQL relational datastore, and an unprivileged Docker evaluation worker.
+    \item \textbf{Seamless In-Game Python Challenge Workflow:} Creating an intuitive user experience where players discover environmental beacons, engage with NPCs, open an in-game multiline code editor with syntax typography, submit solutions, and receive structured assertion results in real time.
+    \item \textbf{Decoupled and Secure Containerized Sandbox:} Engineering an execution environment that isolates unverified learner Python code from both the host system and the game process, enforcing strict execution time limits, resource ceilings, and output truncation.
+    \item \textbf{Server-Authoritative Progression and Verification:} Implementing idempotent quest event submission, versioned curriculum definitions, and authenticated student profiles verified through automated PlayMode and unit test suites.
+\end{enumerate}
+
+\section{Problem Statement}
+Introductory programming learners suffer from low engagement and high dropout rates due to passive learning materials, fragmented development environments, and a lack of immediate, constructive feedback. Existing gamified solutions are predominantly 2D puzzle games limited to elementary syntax without authentic code execution. There is an absence of production-grade systems that combine an immersive 3D RPG environment, standard multiline Python coding, isolated server-side sandbox evaluation, and robust authentication in an integrated, secure academic platform.
+
+\section{Research and Engineering Questions}
+This project investigates the following primary engineering questions:
+\begin{enumerate}
+    \item \textbf{EQ1 (System Integration):} How can a high-fidelity 3D game engine (Unity~6) be effectively synchronized with an asynchronous web backend (FastAPI) to handle code submission, evaluation polling, and quest progression with sub-second responsiveness?
+    \item \textbf{EQ2 (Sandbox Security):} How can arbitrary learner-submitted Python code be safely evaluated in real time without exposing the game client or server host to denial-of-service, remote code execution, or infinite loops?
+    \item \textbf{EQ3 (Pedagogical Alignment):} How can narrative quest structures and environmental milestones in a 3D game world be mapped to formal programming curriculum objectives while preserving intrinsic gameplay engagement?
+\end{enumerate}
+
+\section{Project Objectives}
+To address these research questions, the project defines the following specific, measurable objectives:
+\begin{enumerate}
+    \item \textbf{Objective 1 (3D Client \& World Design):} Develop a 3D game world in Unity~6 featuring a third-person player controller, stylized environment assets, interactive NPCs (e.g., Signal Keeper, Mira), and learning regions (Variable Valley).
+    \item \textbf{Objective 2 (In-Game Coding Interface):} Implement a responsive Heads-Up Display (HUD) and modal challenge interface providing a multiline code editor, legible TrueType typography, an interactive Run/Submit action workflow, and an output feedback card.
+    \item \textbf{Objective 3 (Backend API \& Data Persistence):} Build a robust FastAPI backend backed by PostgreSQL to manage versioned quests, curriculum catalogs, student profiles, and idempotent event ingestion.
+    \item \textbf{Objective 4 (Isolated Containerized Evaluator):} Implement an independent worker service that receives submission jobs, executes user code against visible and hidden unit tests inside a stateless Docker container, and generates structured diagnostic results.
+    \item \textbf{Objective 5 (Authentication \& Security):} Integrate OpenID Connect (OIDC) authentication using Keycloak with the PKCE authorization flow to protect student data and backend endpoints.
+    \item \textbf{Objective 6 (Automated Verification):} Validate the end-to-end system through comprehensive automated unit tests, Unity PlayMode suites, and standalone Windows build verification.
+\end{enumerate}
+
+\section{Report Organization}
+The remainder of this report is organized as follows:
+\begin{itemize}
+    \item \textbf{Chapter~\ref{ch:lit} (Literature Survey):} Presents a comprehensive review of recent literature on gamified programming, intelligent tutoring systems, knowledge tracing, and automated code grading, including a detailed 10-paper comparative analysis.
+    \item \textbf{Chapter~\ref{ch:method} (Methodology):} Details the research methodology, architectural patterns, pedagogical challenge design, and experimental protocols.
+    \item \textbf{Chapter~\ref{ch:system_analysis} (System Analysis and Design):} Expands on functional/non-functional requirements, UML diagrams, entity-relationship models, and data flows.
+    \item \textbf{Chapter~\ref{ch:implementation} (Implementation):} Documents the concrete implementation across Unity, FastAPI, Docker, PostgreSQL, and Keycloak with verified architectural details.
+    \item \textbf{Chapter~\ref{ch:results} (Results and Discussion):} Evaluates automated test metrics, execution latency, memory footprint, visual rendering, and verified vertical-slice gameplay.
+    \item \textbf{Chapter~\ref{ch:conclusion} (Conclusion and Future Scope):} Synthesizes the project outcomes, discusses technical limitations, and charts future development paths including multi-agent LLM tutoring and expanded curricula.
+\end{itemize}

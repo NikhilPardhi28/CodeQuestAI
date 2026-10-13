@@ -1,0 +1,110 @@
+\chapter{System Analysis and Design}
+\label{ch:system_analysis}
+
+\section{System Requirements Specification}
+A comprehensive requirements analysis was conducted to establish the operational boundaries and technical constraints of the CodeQuest AI platform.
+
+\subsection{Functional Requirements (FR)}
+\begin{itemize}
+    \item \textbf{FR1 (Interactive 3D Navigation):} The learner shall control a 3D avatar within a third-person perspective using standard keyboard and mouse controls (WASD, Space, Shift) with dynamic slope adherence and gravity physics.
+    \item \textbf{FR2 (NPC Interaction \& Dialogue):} The player shall trigger proximity-based conversations with educational guide characters (e.g., Guide Mira, Signal Keeper) featuring contextual dialogue progression and branch selections.
+    \item \textbf{FR3 (In-Game Code Editor HUD):} The client shall render an in-game code editor overlay supporting multi-line Python input, syntax guidance, and standard execution shortcuts.
+    \item \textbf{FR4 (Secure Challenge Dispatch):} Code submissions from the client HUD shall be transmitted asynchronously over HTTPS to the backend API accompanied by student session identifiers.
+    \item \textbf{FR5 (Hermetic Sandbox Execution):} The backend shall evaluate untrusted code inside isolated Docker containers with enforced memory, CPU, and execution duration quotas.
+    \item \textbf{FR6 (Server-Authoritative Progression):} The backend shall persist quest progress snapshots, objective completions, and submission records in a relational database.
+\end{itemize}
+
+\subsection{Non-Functional Requirements (NFR)}
+\begin{itemize}
+    \item \textbf{NFR1 (Performance \& Framerate):} The 3D client shall maintain a minimum of 60\,FPS on standard desktop GPUs (e.g., NVIDIA RTX series) with frame budget under 16.6\,ms.
+    \item \textbf{NFR2 (Evaluation Latency):} End-to-end challenge evaluation (client submission $\rightarrow$ container execution $\rightarrow$ HUD display) shall complete within 1.5 seconds under normal operational load.
+    \item \textbf{NFR3 (Security \& Isolation):} Sandboxed user code shall not possess access to host network interfaces, persistent storage volumes, or parent process memory.
+    \item \textbf{NFR4 (Typography \& Accessibility):} All UI text elements and buttons shall use embedded TrueType fonts with verified mesh generation and high-contrast color schemes.
+    \item \textbf{NFR5 (Reliability \& Idempotency):} Network retries shall not duplicate student progress records or corrupt state snapshots.
+\end{itemize}
+
+\section{UML Structural and Behavioral Modeling}
+
+\subsection{Use Case Model}
+Figure~\ref{fig:use_case} depicts the core use cases available to the primary student actor.
+
+\begin{figure}[htbp]
+\centering
+\setlength{\fboxsep}{10pt}
+\setlength{\fboxrule}{0.6pt}
+\fbox{
+\begin{minipage}{0.9\textwidth}
+\centering
+\textbf{\large Use Case Model: Student Interactions}\\[0.3cm]
+\begin{tabular}{r c l}
+\textbf{Student Actor} & $\longrightarrow$ & \textit{UC1: Navigate 3D World (WASD/Jump/Sprint)} \\
+& $\longrightarrow$ & \textit{UC2: Engage in NPC Dialogue (Signal Keeper, Mira)} \\
+& $\longrightarrow$ & \textit{UC3: Open Coding Challenge Beacon} \\
+& $\longrightarrow$ & \textit{UC4: Compose and Edit Python Script in HUD} \\
+& $\longrightarrow$ & \textit{UC5: Trigger ``Run / Submit'' Code Evaluation} \\
+& $\longrightarrow$ & \textit{UC6: Review Test Assertions and Output Feedback} \\
+& $\longrightarrow$ & \textit{UC7: Authenticate via Keycloak SSO} \\
+& $\longrightarrow$ & \textit{UC8: Inspect Quest Journal and Progress Snapshots} \\
+\end{tabular}
+\end{minipage}
+}
+\caption{System Use Case Diagram for Student Learner}
+\label{fig:use_case}
+\end{figure}
+
+\subsection{Sequence Diagram: Challenge Evaluation Workflow}
+Figure~\ref{fig:sequence_eval} illustrates the interaction sequence between client, gateway, database, and sandbox.
+
+\begin{figure}[htbp]
+\centering
+\setlength{\fboxsep}{10pt}
+\setlength{\fboxrule}{0.8pt}
+\fbox{
+\begin{minipage}{0.92\textwidth}
+\setstretch{1.15}
+\textbf{\large Sequence of Challenge Submission and Evaluation}\\[0.3cm]
+\textbf{1. Player} $\xrightarrow{\text{Press E}}$ \textbf{Unity Beacon Interactable} $\rightarrow$ Opens In-Game Editor Modal\\
+\textbf{2. Player} $\xrightarrow{\text{Types Code \& Clicks Run}}$ \textbf{RuntimeHud} $\rightarrow$ Generates Submission UUID\\
+\textbf{3. RuntimeHud} $\xrightarrow{\text{POST /api/v1/challenges/\{slug\}/submissions}}$ \textbf{FastAPI Gateway}\\
+\textbf{4. FastAPI} $\xrightarrow{\text{INSERT INTO submissions (status='pending')}}$ \textbf{PostgreSQL Datastore}\\
+\textbf{5. FastAPI} $\xrightarrow{\text{POST /internal/evaluate (Bearer Token)}}$ \textbf{Docker Worker}\\
+\textbf{6. Docker Worker} $\xrightarrow{\text{Execute in unprivileged container}}$ \textbf{Python Sandbox (5s timeout)}\\
+\textbf{7. Python Sandbox} $\xrightarrow{\text{Return JSON results}}$ \textbf{Docker Worker}\\
+\textbf{8. Docker Worker} $\xrightarrow{\text{HTTP 200 (visible/hidden test passes)}}$ \textbf{FastAPI Gateway}\\
+\textbf{9. FastAPI} $\xrightarrow{\text{UPDATE submissions (status='passed')}}$ \textbf{PostgreSQL Datastore}\\
+\textbf{10. RuntimeHud} $\xrightarrow{\text{Polls / GET submission status}}$ \textbf{FastAPI Gateway}\\
+\textbf{11. RuntimeHud} $\xrightarrow{\text{Render Emerald Test Badges}}$ \textbf{HUD Output Card on Screen}\\
+\end{minipage}
+}
+\caption{Sequence Workflow for Challenge Submission and Evaluation}
+\label{fig:sequence_eval}
+\end{figure}
+
+\section{Database Schema Design}
+The relational schema is implemented in PostgreSQL~17.5 using SQLAlchemy models and managed via Alembic migrations. Figure~\ref{fig:erd_schema} outlines the core entity-relationship model.
+
+\begin{figure}[htbp]
+\centering
+\setlength{\fboxsep}{8pt}
+\setlength{\fboxrule}{0.6pt}
+\fbox{
+\begin{minipage}{0.96\textwidth}
+\setstretch{1.1}
+\centering
+\textbf{\large Relational Entity-Relationship Diagram (ERD)}\\[0.3cm]
+\small
+\begin{tabularx}{\textwidth}{|p{0.24\textwidth}|p{0.36\textwidth}|X|}
+\hline
+\rowcolor{gray!20}\textbf{Entity} & \textbf{Attributes (PK / FK / UQ)} & \textbf{Description} \\ \hline
+\textbf{player\_profiles} & \texttt{id (PK), oidc\_sub (UQ), username, created\_at} & Student identity linked to Keycloak \\ \hline
+\textbf{curriculum\_modules} & \texttt{id (PK), slug (UQ), title, sequence, version} & Thematic learning tracks (e.g., Variable Valley) \\ \hline
+\textbf{challenges} & \texttt{id (PK), slug, version, module\_id (FK), definition} & Coding task parameters, test suites, timeouts \\ \hline
+\textbf{quest\_definitions} & \texttt{id (PK), quest\_id, version, title, category} & High-level quest graphs and objectives \\ \hline
+\textbf{quest\_progress} & \texttt{id (PK), player\_id (FK), quest\_id, sync\_state} & Server-authoritative objective counters \\ \hline
+\textbf{challenge\_submissions} & \texttt{id (PK), player\_id (FK), challenge\_id (FK), status, source} & Immutable submission records and test logs \\ \hline
+\end{tabularx}
+\end{minipage}
+}
+\caption{Entity-Relationship Model of CodeQuest AI Relational Datastore}
+\label{fig:erd_schema}
+\end{figure}

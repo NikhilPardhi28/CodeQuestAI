@@ -27,7 +27,9 @@ except Exception:
 def _set_child_file_size_limit(max_bytes: int) -> None:
     import resource
 
-    resource.setrlimit(resource.RLIMIT_FSIZE, (max_bytes, max_bytes))
+    soft, hard = resource.getrlimit(resource.RLIMIT_FSIZE)
+    target = min(max_bytes, hard) if hard != resource.RLIM_INFINITY and hard > 0 else max_bytes
+    resource.setrlimit(resource.RLIMIT_FSIZE, (target, hard))
 
 
 def _kill_process_tree(process: subprocess.Popen[bytes]) -> None:

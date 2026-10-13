@@ -91,9 +91,10 @@ namespace CodeQuest.Networking
             {
                 try
                 {
-                    if (_tokenProvider == null || !_tokenProvider.TryGetAccessToken(out accessToken) || string.IsNullOrWhiteSpace(accessToken))
+                    if (_tokenProvider == null || string.IsNullOrWhiteSpace(accessToken = await _tokenProvider.GetAccessTokenAsync(cancellationToken)))
                         return Failure<T>("authentication_required", "Sign in is required to use this service.", 401);
                 }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
                 catch (Exception)
                 {
                     return Failure<T>("authentication_unavailable", "Sign-in is temporarily unavailable.", 503);
@@ -151,9 +152,10 @@ namespace CodeQuest.Networking
             string accessToken;
             try
             {
-                if (_tokenProvider == null || !_tokenProvider.TryGetAccessToken(out accessToken) || string.IsNullOrWhiteSpace(accessToken))
+                if (_tokenProvider == null || string.IsNullOrWhiteSpace(accessToken = await _tokenProvider.GetAccessTokenAsync(cancellationToken)))
                     return Failure<TResponse>("authentication_required", "Sign in is required to use this service.", 401);
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
             catch (Exception)
             {
                 return Failure<TResponse>("authentication_unavailable", "Sign-in is temporarily unavailable.", 503);
@@ -209,9 +211,10 @@ namespace CodeQuest.Networking
             string accessToken;
             try
             {
-                if (_tokenProvider == null || !_tokenProvider.TryGetAccessToken(out accessToken) || string.IsNullOrWhiteSpace(accessToken))
+                if (_tokenProvider == null || string.IsNullOrWhiteSpace(accessToken = await _tokenProvider.GetAccessTokenAsync(cancellationToken)))
                     return Failure<TResponse>("authentication_required", "Sign in is required to use this service.", 401);
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
             catch (Exception)
             {
                 return Failure<TResponse>("authentication_unavailable", "Sign-in is temporarily unavailable.", 503);
